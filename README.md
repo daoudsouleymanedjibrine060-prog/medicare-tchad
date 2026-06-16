@@ -79,7 +79,7 @@ chmod +x scripts/*.sh
 ./scripts/setup-ssl.sh votre-domaine.com admin@votre-domaine.com
 ```
 
-Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le guide complet (DNS, HTTPS, backup, monitoring).
+Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le déploiement complet et [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) pour **mettre le site en ligne** (VPS + domaine + GitHub).
 
 ## Documentation
 

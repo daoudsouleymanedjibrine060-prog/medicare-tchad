@@ -46,12 +46,16 @@ if (-not $ghAvailable) {
     exit 0
 }
 
-$authStatus = gh auth status 2>&1
+$authCheck = gh auth status 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Non connecté à GitHub. Exécutez :" -ForegroundColor Yellow
     Write-Host "  gh auth login"
     Write-Host "Puis relancez : .\scripts\init-github.ps1"
+    Write-Host ""
+    Write-Host "Le commit local est prêt. Remote manuel :" -ForegroundColor Green
+    Write-Host "  git remote add origin https://github.com/VOTRE_COMPTE/medicare-tchad.git"
+    Write-Host "  git push -u origin main"
     exit 0
 }
 
