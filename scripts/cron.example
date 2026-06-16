@@ -1,0 +1,12 @@
+# Exemple de tâches cron pour MediCare Tchad (production)
+# Installer : crontab -e
+# Adapter les chemins et le domaine
+
+# Sauvegarde MySQL quotidienne à 2h
+0 2 * * * /opt/medicare-tchad/scripts/backup-mysql.sh >> /var/log/medicare-backup.log 2>&1
+
+# Health check toutes les 5 minutes
+*/5 * * * * /opt/medicare-tchad/scripts/health-check.sh >> /var/log/medicare-health.log 2>&1
+
+# Renouvellement SSL Let's Encrypt (3h du matin)
+0 3 * * * certbot renew --quiet --deploy-hook 'cd /opt/medicare-tchad && cp /etc/letsencrypt/live/DOMAIN/fullchain.pem nginx/ssl/ && cp /etc/letsencrypt/live/DOMAIN/privkey.pem nginx/ssl/ && docker compose -f docker-compose.prod.yml restart nginx'

@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ASSISTANT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum EstablishmentType {
+  HOPITAL
+  CLINIQUE
+  CABINET
+  CENTRE_SANTE
+  LABORATOIRE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum NotificationType {
+  APPOINTMENT
+  REMINDER
+  SYSTEM
+  SMS
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phone         String         @unique
+  passwordHash  String         @map("password_hash")
+  firstName     String         @map("first_name")
+  lastName      String         @map("last_name")
+  role          Role
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  patient       Patient?
+  doctor        Doctor?
+  assistant     Assistant?
+  admin         Admin?
+  notifications Notification[]
+  chatMessages  ChatMessage[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  userId       String        @unique @map("user_id")
+  dateOfBirth  DateTime?     @map("date_of_birth")
+  age          Int?
+  gender       String?
+  bloodGroup   String?       @map("blood_group")
+  address      String?       @db.Text
+  cityId       String?       @map("city_id")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city         City?         @relation(fields: [cityId], references: [id])
+  appointments Appointment[]
+
+  @@map("patients")
+}
+
+model Doctor {
+  id              String                 @id @default(uuid())
+  userId          String                 @unique @map("user_id")
+  specialtyId     String                 @map("specialty_id")
+  licenseNumber   String?                @map("license_number")
+  bio             String?                @db.Text
+  photoUrl        String?                @map("photo_url")
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty       Specialty              @relation(fields: [specialtyId], references: [id])
+  assistants      Assistant[]
+  schedules       Schedule[]
+  appointments    Appointment[]
+  blockedSlots    BlockedSlot[]
+  establishments  DoctorEstablishment[]
+
+  @@map("doctors")
+}
+
+model Assistant {
+  id           String        @id @default(uuid())
+  userId       String        @unique @map("user_id")
+  doctorId     String        @map("doctor_id")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("assistants")
+}
+
+model Admin {
+  id     String  @id @default(uuid())
+  userId String  @unique @map("user_id")
+  scope  String?
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+model Specialty {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  nameFr  String   @map("name_fr")
+  doctors Doctor[]
+
+  @@map("specialties")
+}
+
+model City {
+  id             String          @id @default(uuid())
+  name           String          @unique
+  region         String?
+  latitude       Float?
+  longitude      Float?
+  patients       Patient[]
+  establishments Establishment[]
+
+  @@map("cities")
+}
+
+model Establishment {
+  id                    String            @id @default(uuid())
+  name                  String
+  type                  EstablishmentType
+  address               String            @db.Text
+  phone                 String
+  cityId                String            @map("city_id")
+  latitude              Float
+  longitude             Float
+  parentEstablishmentId String?           @map("parent_establishment_id")
+  city                  City              @relation(fields: [cityId], references: [id])
+  parentEstablishment   Establishment?    @relation("EstablishmentHierarchy", fields: [parentEstablishmentId], references: [id])
+  childEstablishments   Establishment[]   @relation("EstablishmentHierarchy")
+  doctors               DoctorEstablishment[]
+  appointments          Appointment[]
+
+  @@map("establishments")
+}
+
+model DoctorEstablishment {
+  id              String        @id @default(uuid())
+  doctorId        String        @map("doctor_id")
+  establishmentId String        @map("establishment_id")
+  doctor          Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  establishment   Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, establishmentId])
+  @@map("doctor_establishments")
+}
+
+model Schedule {
+  id           String @id @default(uuid())
+  doctorId     String @map("doctor_id")
+  dayOfWeek    Int    @map("day_of_week")
+  startTime    String @map("start_time")
+  endTime      String @map("end_time")
+  slotDuration Int    @default(30) @map("slot_duration")
+  doctor       Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
+
+model BlockedSlot {
+  id        String   @id @default(uuid())
+  doctorId  String   @map("doctor_id")
+  date      DateTime @db.Date
+  startTime String   @map("start_time")
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, date, startTime])
+  @@map("blocked_slots")
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  patientId       String            @map("patient_id")
+  doctorId        String            @map("doctor_id")
+  assistantId     String?           @map("assistant_id")
+  establishmentId String            @map("establishment_id")
+  date            DateTime          @db.Date
+  startTime       String            @map("start_time")
+  endTime         String            @map("end_time")
+  status          AppointmentStatus @default(PENDING)
+  reason          String?           @db.Text
+  rejectionReason String?           @map("rejection_reason") @db.Text
+  reminderSent    Boolean           @default(false) @map("reminder_sent")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  doctor          Doctor            @relation(fields: [doctorId], references: [id])
+  assistant       Assistant?        @relation(fields: [assistantId], references: [id])
+  establishment   Establishment     @relation(fields: [establishmentId], references: [id])
+
+  @@index([doctorId, date])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  role      ChatRole
+  content   String   @db.Text
+  sessionId String   @map("session_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionId])
+  @@map("chat_messages")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  content    String   @db.Text
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
+  @@map("messages")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

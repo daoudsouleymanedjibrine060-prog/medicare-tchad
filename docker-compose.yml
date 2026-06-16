@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: medicare-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: medicare_tchad
+      MYSQL_USER: medicare
+      MYSQL_PASSWORD: medicare123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medicare-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: mysql://medicare:medicare123@mysql:3306/medicare_tchad
+      JWT_SECRET: dev-secret-key-medicare-tchad-32chars
+      JWT_REFRESH_SECRET: dev-refresh-secret-medicare-tchad-32
+      FRONTEND_URL: http://localhost:5173
+      NODE_ENV: development
+      SMS_ENABLED: "false"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medicare-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:4000/api/v1
+    depends_on:
+      - api
+    command: npm run dev -- --host
+
+volumes:
+  mysql_data:

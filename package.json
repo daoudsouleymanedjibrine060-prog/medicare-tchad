@@ -1,0 +1,20 @@
+{
+  "name": "medicare-tchad",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:migrate": "cd backend && npx prisma migrate deploy",
+    "verify:api": "node scripts/verify-api.js",
+    "docker:dev": "docker compose up -d",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d --build",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File scripts/deploy-prod.ps1",
+    "deploy:seed": "powershell -ExecutionPolicy Bypass -File scripts/deploy-prod.ps1 -Seed",
+    "init:github": "powershell -ExecutionPolicy Bypass -File scripts/init-github.ps1",
+    "validate:prod": "bash scripts/validate-production.sh",
+    "health:check": "bash scripts/health-check.sh",
+    "backup:mysql": "bash scripts/backup-mysql.sh"
+  }
+}
