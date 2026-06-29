@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { authenticate, requireRole } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
-import { normalizePhone } from '../../utils/helpers';
+import { normalizePhone, stripUserSecrets } from '../../utils/helpers';
 import { Role } from '@prisma/client';
 
 const router = Router();
@@ -27,7 +27,7 @@ router.get('/profile', authenticate, requireRole(Role.PATIENT), async (req, res)
     include: { user: true, city: true },
   });
   if (!patient) return res.status(404).json({ error: 'Profil patient introuvable' });
-  return res.json(patient);
+  return res.json(stripUserSecrets(patient));
 });
 
 router.patch('/profile', authenticate, requireRole(Role.PATIENT), validateBody(updateProfileSchema), async (req, res) => {
@@ -66,12 +66,12 @@ router.patch('/profile', authenticate, requireRole(Role.PATIENT), validateBody(u
     include: { user: true, city: true },
   });
 
-  return res.json(updated);
+  return res.json(stripUserSecrets(updated));
 });
 
 router.get('/', authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 20;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
   const [patients, total] = await Promise.all([
     prisma.patient.findMany({
       skip: (page - 1) * limit,
@@ -81,7 +81,7 @@ router.get('/', authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN), async (
     }),
     prisma.patient.count(),
   ]);
-  return res.json({ data: patients, total, page, limit });
+  return res.json(stripUserSecrets({ data: patients, total, page, limit }));
 });
 
 export default router;

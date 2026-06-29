@@ -120,7 +120,11 @@ export default function TomorrowPlanningGrid({ showHorairesLink = true }: Tomorr
 
 
 
-  if (!tomorrow) return null;
+  if (!tomorrow) {
+    return (
+      <p className="text-sm text-slate-500">Planning de demain indisponible pour le moment.</p>
+    );
+  }
 
 
 

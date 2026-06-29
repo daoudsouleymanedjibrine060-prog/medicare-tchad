@@ -181,7 +181,7 @@ export default function AdminManagementPage({ section }: { section?: AdminSectio
       firstName: u.firstName,
       lastName: u.lastName,
       role: u.role,
-      specialtyId: '',
+      specialtyId: u.doctor?.specialtyId || '',
       doctorId: '',
       scope: u.admin?.scope || '',
     });
@@ -204,8 +204,12 @@ export default function AdminManagementPage({ section }: { section?: AdminSectio
   };
 
   const toggleUser = async (id: string) => {
-    await api.patch(`/users/${id}/toggle`);
-    load();
+    try {
+      await api.patch(`/users/${id}/toggle`);
+      load();
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Erreur');
+    }
   };
 
   const tabs: { id: Tab; label: string }[] = [

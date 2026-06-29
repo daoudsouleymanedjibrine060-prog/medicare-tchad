@@ -25,6 +25,8 @@ export default function MessagesPage() {
   const [selected, setSelected] = useState<string>('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   const load = () => {
     api.get('/messages').then(({ data }) => setMessages(data)).finally(() => setLoading(false));
@@ -54,9 +56,17 @@ export default function MessagesPage() {
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selected || !content.trim()) return;
-    await api.post('/messages', { receiverId: selected, content });
-    setContent('');
-    load();
+    setSending(true);
+    setSendError('');
+    try {
+      await api.post('/messages', { receiverId: selected, content });
+      setContent('');
+      load();
+    } catch {
+      setSendError('Impossible d\'envoyer le message');
+    } finally {
+      setSending(false);
+    }
   };
 
   const thread = useMemo(() => {
@@ -110,16 +120,19 @@ export default function MessagesPage() {
               })
             )}
           </div>
-          <form onSubmit={send} className="border-t p-4 flex gap-2">
+          <form onSubmit={send} className="border-t p-4 flex flex-col gap-2">
+            {sendError && <p className="text-xs text-red-600">{sendError}</p>}
+            <div className="flex gap-2">
             <input
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Écrire un message..."
               className="flex-1 border rounded-lg px-3 py-2 text-sm"
             />
-            <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700">
+            <button type="submit" disabled={sending} className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50">
               <Send className="w-4 h-4" />
             </button>
+            </div>
           </form>
         </div>
       </div>

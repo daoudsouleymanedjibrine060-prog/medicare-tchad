@@ -214,6 +214,7 @@ model Appointment {
   assistant       Assistant?        @relation(fields: [assistantId], references: [id])
   establishment   Establishment     @relation(fields: [establishmentId], references: [id])
 
+  @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
   @@index([patientId])
   @@map("appointments")

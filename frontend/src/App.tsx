@@ -8,7 +8,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import {
   LayoutDashboard, Search, Calendar, User, Map, ClipboardList, Settings, Shield, FlaskConical,
-  Stethoscope, Building2, Users, MessageSquare,
+  Stethoscope, Building2, Users, MessageSquare, Clock,
 } from 'lucide-react';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 });
 
 const patientNav = [
-  { to: '/patient/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+  { to: '/patient/dashboard', label: 'Accueil', icon: LayoutDashboard },
   { to: '/patient/rendez-vous', label: 'Rendez-vous', icon: Calendar },
   { to: '/patient/medecins', label: 'Médecins', icon: Search },
   { to: '/patient/laboratoires', label: 'Laboratoires', icon: FlaskConical },
@@ -50,10 +50,11 @@ const patientNav = [
 ];
 
 const assistantNav = [
-  { to: '/assistant/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+  { to: '/assistant/dashboard', label: 'Accueil', icon: LayoutDashboard },
   { to: '/assistant/mon-medecin', label: 'Mon médecin', icon: Stethoscope },
   { to: '/assistant/planning', label: 'Planning', icon: Calendar },
   { to: '/assistant/demandes', label: 'Demandes', icon: ClipboardList },
+  { to: '/assistant/horaires', label: 'Horaires', icon: Clock },
   { to: '/assistant/messages', label: 'Messages', icon: MessageSquare },
 ];
 
@@ -98,8 +99,8 @@ function AdminLayout() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route index element={<Lazy><LandingPage /></Lazy>} />
@@ -169,8 +170,8 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

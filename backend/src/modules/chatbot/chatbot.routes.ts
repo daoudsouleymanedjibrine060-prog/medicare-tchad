@@ -21,7 +21,8 @@ router.post('/chat', authenticate, requireRole(Role.PATIENT), validateBody(chatS
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur chatbot';
-    return res.status(429).json({ error: message });
+    const status = message.toLowerCase().includes('limite') || message.toLowerCase().includes('rate') ? 429 : 500;
+    return res.status(status).json({ error: message });
   }
 });
 

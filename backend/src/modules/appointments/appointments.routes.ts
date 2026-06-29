@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { AppointmentStatus, NotificationType, Role } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { authenticate, requireRole } from '../../middleware/auth';
@@ -11,10 +12,16 @@ import {
 } from '../../services/appointment.service';
 import { createNotification } from '../../services/notification.service';
 import { smsService } from '../../services/sms.service';
-import { formatDateFr, parseDateOnly, generateSlots } from '../../utils/helpers';
+import { formatDateFr, parseDateOnly, generateSlots, stripUserSecrets, timeToMinutes } from '../../utils/helpers';
 import { paramId } from '../../utils/params';
 
 const router = Router();
+
+const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.nativeEnum(AppointmentStatus).optional(),
+});
 
 const bookSchema = z.object({
   doctorId: z.string().uuid(),
@@ -27,6 +34,14 @@ const bookSchema = z.object({
 const statusSchema = z.object({
   status: z.enum(['CONFIRMED', 'REJECTED', 'CANCELLED', 'COMPLETED']),
   rejectionReason: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.status === 'REJECTED' && !data.rejectionReason?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Motif de refus requis',
+      path: ['rejectionReason'],
+    });
+  }
 });
 
 router.post('/', authenticate, requireRole(Role.PATIENT), validateBody(bookSchema), async (req, res) => {
@@ -34,6 +49,14 @@ router.post('/', authenticate, requireRole(Role.PATIENT), validateBody(bookSchem
   if (!patient) return res.status(404).json({ error: 'Profil patient requis' });
 
   const { doctorId, establishmentId, date, startTime, reason } = req.body;
+
+  const doctorEstablishment = await prisma.doctorEstablishment.findFirst({
+    where: { doctorId, establishmentId },
+  });
+  if (!doctorEstablishment) {
+    return res.status(400).json({ error: 'Ce médecin n\'est pas rattaché à cet établissement' });
+  }
+
   const slots = await getAvailableSlots(doctorId, date);
   if (!slots.includes(startTime)) {
     return res.status(400).json({ error: 'Créneau non disponible' });
@@ -44,23 +67,31 @@ router.post('/', authenticate, requireRole(Role.PATIENT), validateBody(bookSchem
   const slotDuration = await getDoctorSlotDuration(doctorId, dayOfWeek);
   const endTime = computeEndTime(startTime, slotDuration);
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      patientId: patient.id,
-      doctorId,
-      establishmentId,
-      date: parsedDate,
-      startTime,
-      endTime,
-      reason,
-      status: AppointmentStatus.PENDING,
-    },
-    include: {
-      doctor: { include: { user: true, assistants: { include: { user: true } } } },
-      patient: { include: { user: true } },
-      establishment: true,
-    },
-  });
+  let appointment;
+  try {
+    appointment = await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId,
+        establishmentId,
+        date: parsedDate,
+        startTime,
+        endTime,
+        reason,
+        status: AppointmentStatus.PENDING,
+      },
+      include: {
+        doctor: { include: { user: true, assistants: { include: { user: true } } } },
+        patient: { include: { user: true } },
+        establishment: true,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return res.status(409).json({ error: 'Créneau déjà réservé' });
+    }
+    throw err;
+  }
 
   for (const assistant of appointment.doctor.assistants) {
     await createNotification({
@@ -80,15 +111,21 @@ router.post('/', authenticate, requireRole(Role.PATIENT), validateBody(bookSchem
     link: '/patient/rendez-vous',
   });
 
-  return res.status(201).json(appointment);
+  return res.status(201).json(stripUserSecrets(appointment));
 });
 
 router.get('/mine', authenticate, async (req, res) => {
   const { role, userId } = req.user!;
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 20;
-  const status = req.query.status as AppointmentStatus | undefined;
+  const parsed = paginationSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Paramètres invalides', details: parsed.error.flatten().fieldErrors });
+  }
+  const { page, limit, status } = parsed.data;
   const upcoming = req.query.upcoming === 'true';
+
+  if (role === Role.ADMIN || role === Role.SUPER_ADMIN) {
+    return res.status(403).json({ error: 'Utilisez GET /appointments pour la liste admin' });
+  }
 
   let where: Record<string, unknown> = {};
   if (role === Role.PATIENT) {
@@ -99,6 +136,12 @@ router.get('/mine', authenticate, async (req, res) => {
     const assistant = await prisma.assistant.findUnique({ where: { userId } });
     if (!assistant) return res.json({ data: [], total: 0, page, limit });
     where = { doctorId: assistant.doctorId };
+  } else if (role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.json({ data: [], total: 0, page, limit });
+    where = { doctorId: doctor.id };
+  } else {
+    return res.status(403).json({ error: 'Accès refusé' });
   }
 
   if (status) {
@@ -124,7 +167,7 @@ router.get('/mine', authenticate, async (req, res) => {
     prisma.appointment.count({ where }),
   ]);
 
-  return res.json({ data, total, page, limit });
+  return res.json(stripUserSecrets({ data, total, page, limit }));
 });
 
 router.get('/assistant/stats', authenticate, requireRole(Role.ASSISTANT), async (req, res) => {
@@ -284,7 +327,7 @@ router.get('/', authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN), async (
     prisma.appointment.count({ where: status ? { status } : {} }),
   ]);
 
-  return res.json({ data, total, page, limit });
+  return res.json(stripUserSecrets({ data, total, page, limit }));
 });
 
 router.patch('/:id/status', authenticate, validateBody(statusSchema), async (req, res) => {
@@ -383,7 +426,7 @@ router.patch('/:id/status', authenticate, validateBody(statusSchema), async (req
     await smsService.appointmentCancelled({ phone: patientUser.phone, doctorName, date: dateStr });
   }
 
-  return res.json(updated);
+  return res.json(stripUserSecrets(updated));
 });
 
 export default router;

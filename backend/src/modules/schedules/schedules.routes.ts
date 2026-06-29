@@ -5,6 +5,7 @@ import { prisma } from '../../config/database';
 import { authenticate, requireRole } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
 import { paramId } from '../../utils/params';
+import { timeToMinutes } from '../../utils/helpers';
 
 const router = Router();
 
@@ -13,6 +14,14 @@ const scheduleSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
   slotDuration: z.number().min(15).max(120).default(30),
+}).superRefine((data, ctx) => {
+  if (timeToMinutes(data.startTime) >= timeToMinutes(data.endTime)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'L\'heure de fin doit être après l\'heure de début',
+      path: ['endTime'],
+    });
+  }
 });
 
 router.get('/', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {

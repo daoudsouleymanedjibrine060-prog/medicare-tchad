@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token manquant' });
@@ -27,7 +27,14 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   const token = header.slice(7);
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
-    req.user = payload;
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, role: true, email: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Compte désactivé ou introuvable' });
+    }
+    req.user = { userId: user.id, role: user.role, email: user.email };
     next();
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' });

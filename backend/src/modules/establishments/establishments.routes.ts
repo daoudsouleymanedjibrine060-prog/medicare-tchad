@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { EstablishmentType, Role } from '@prisma/client';
+import { Prisma, EstablishmentType, Role } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { authenticate, optionalAuth, requireRole } from '../../middleware/auth';
 import { validateBody } from '../../middleware/validate';
-import { normalizePhone } from '../../utils/helpers';
+import { normalizePhone, stripUserSecrets } from '../../utils/helpers';
 import { paramId } from '../../utils/params';
 
 const router = Router();
@@ -40,7 +40,7 @@ router.get('/', optionalAuth, async (req, res) => {
     },
     orderBy: { name: 'asc' },
   });
-  return res.json(establishments);
+  return res.json(stripUserSecrets(establishments));
 });
 
 router.get('/map', optionalAuth, async (req, res) => {
@@ -85,19 +85,36 @@ router.post('/', authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN), valida
 });
 
 router.patch('/:id', authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN), validateBody(updateSchema), async (req, res) => {
-  const data = { ...req.body };
-  if (data.phone) data.phone = normalizePhone(data.phone);
-  const establishment = await prisma.establishment.update({
-    where: { id: paramId(req) },
-    data,
-    include: { city: true, parentEstablishment: { select: { id: true, name: true } } },
-  });
-  return res.json(establishment);
+  try {
+    const data = { ...req.body };
+    if (data.phone) data.phone = normalizePhone(data.phone);
+    const establishment = await prisma.establishment.update({
+      where: { id: paramId(req) },
+      data,
+      include: { city: true, parentEstablishment: { select: { id: true, name: true } } },
+    });
+    return res.json(establishment);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return res.status(404).json({ error: 'Établissement introuvable' });
+    }
+    throw err;
+  }
 });
 
 router.delete('/:id', authenticate, requireRole(Role.SUPER_ADMIN), async (req, res) => {
-  await prisma.establishment.delete({ where: { id: paramId(req) } });
-  return res.json({ message: 'Établissement supprimé' });
+  try {
+    await prisma.establishment.delete({ where: { id: paramId(req) } });
+    return res.json({ message: 'Établissement supprimé' });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return res.status(404).json({ error: 'Établissement introuvable' });
+    }
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+      return res.status(409).json({ error: 'Impossible de supprimer : rendez-vous associés' });
+    }
+    throw err;
+  }
 });
 
 export default router;

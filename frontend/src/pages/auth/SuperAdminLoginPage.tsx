@@ -5,7 +5,7 @@ export default function SuperAdminLoginPage() {
   return (
     <RoleLoginPage
       title="Super Administrateur"
-      subtitle="LedControl — Connexion"
+      subtitle="MediCare Tchad — Connexion"
       expectedRole="SUPER_ADMIN"
       submitLabel="Se connecter"
       usernameLabel="Nom d'utilisateur (email)"

@@ -34,20 +34,19 @@ export default function DoctorDetailPage() {
 
 
 
+  const [loadError, setLoadError] = useState('');
+
   useEffect(() => {
-
+    setLoadError('');
     api.get(`/doctors/${id}`).then(({ data }) => {
-
       setDoctor(data);
-
       if (data.establishments?.[0]) {
-
         setEstablishmentId(data.establishments[0].establishment.id);
-
       }
-
+    }).catch(() => {
+      setLoadError('Impossible de charger ce médecin');
+      setDoctor(null);
     }).finally(() => setLoading(false));
-
   }, [id]);
 
 
@@ -62,7 +61,18 @@ export default function DoctorDetailPage() {
 
   if (loading) return <LoadingSpinner />;
 
-  if (!doctor) return <p>Médecin introuvable</p>;
+  if (loadError || !doctor) {
+    return (
+      <div className="bg-white rounded-xl border p-6 text-center">
+        <p className="text-slate-600">{loadError || 'Médecin introuvable'}</p>
+        <button type="button" onClick={() => navigate(-1)} className="mt-4 text-primary-600 text-sm hover:underline">
+          Retour
+        </button>
+      </div>
+    );
+  }
+
+  const hasEstablishment = (doctor.establishments?.length ?? 0) > 0;
 
 
 
@@ -145,18 +155,16 @@ export default function DoctorDetailPage() {
 
 
         <button
-
           onClick={() => setModalOpen(true)}
-
-          className="mt-6 inline-flex items-center gap-2 bg-primary-600 text-white px-5 py-2.5 rounded-lg text-sm hover:bg-primary-700"
-
+          disabled={!hasEstablishment}
+          className="mt-6 inline-flex items-center gap-2 bg-primary-600 text-white px-5 py-2.5 rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-
           <Calendar className="w-4 h-4" />
-
           Prendre rendez-vous
-
         </button>
+        {!hasEstablishment && (
+          <p className="mt-2 text-sm text-amber-600">Aucun cabinet associé — réservation indisponible.</p>
+        )}
 
       </div>
 

@@ -15,6 +15,8 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const AUTH_LOGOUT_EVENT = 'medicare:auth-logout';
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -28,7 +30,7 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         localStorage.removeItem('accessToken');
-        window.location.href = '/connexion';
+        window.dispatchEvent(new CustomEvent(AUTH_LOGOUT_EVENT));
       }
     }
     return Promise.reject(error);

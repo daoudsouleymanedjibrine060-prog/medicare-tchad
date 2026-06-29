@@ -20,10 +20,6 @@ export function signAccessToken(payload: AuthPayload) {
   return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES as jwt.SignOptions['expiresIn'] });
 }
 
-export function signRefreshToken(payload: AuthPayload) {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES as jwt.SignOptions['expiresIn'] });
-}
-
 export async function createRefreshToken(userId: string) {
   const token = crypto.randomBytes(48).toString('hex');
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

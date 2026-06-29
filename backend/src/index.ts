@@ -35,11 +35,19 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 10 : 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de tentatives. Réessayez plus tard.' },
+});
+
 app.get('/api/v1/health', (_req, res) => {
   res.json({ status: 'ok', service: 'MediCare Tchad API', timestamp: new Date().toISOString() });
 });
 
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/patients', patientsRoutes);
 app.use('/api/v1/doctors', doctorsRoutes);
 app.use('/api/v1/appointments', appointmentsRoutes);

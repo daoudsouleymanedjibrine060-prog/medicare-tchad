@@ -18,12 +18,24 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState('');
+
   useEffect(() => {
-    api.get('/dashboard/stats').then(({ data }) => setStats(data)).finally(() => setLoading(false));
+    api.get('/dashboard/stats')
+      .then(({ data }) => setStats(data))
+      .catch(() => setError('Impossible de charger les statistiques'))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <LoadingSpinner />;
-  if (!stats) return null;
+  if (!stats) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold">Tableau de bord Admin</h1>
+        <p className="mt-4 text-sm text-red-600">{error || 'Données indisponibles'}</p>
+      </div>
+    );
+  }
 
   return (
     <div>

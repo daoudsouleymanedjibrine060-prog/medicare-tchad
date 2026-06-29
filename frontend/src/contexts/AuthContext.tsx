@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import api, { AUTH_LOGOUT_EVENT } from '../services/api';
 import type { User, Role } from '../types';
 
 interface AuthContextType {
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const refreshUser = async () => {
     try {
@@ -46,6 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    const onLogout = () => {
+      setUser(null);
+      localStorage.removeItem('accessToken');
+      navigate('/connexion', { replace: true });
+    };
+    window.addEventListener(AUTH_LOGOUT_EVENT, onLogout);
+    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, onLogout);
+  }, [navigate]);
+
   const login = async (email: string, password: string, expectedRole?: Role) => {
     const { data } = await api.post('/auth/login', { email, password, expectedRole });
     localStorage.setItem('accessToken', data.accessToken);
@@ -61,7 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // déconnexion locale même si l'API échoue
+    }
     localStorage.removeItem('accessToken');
     setUser(null);
   };

@@ -12,6 +12,7 @@ export default function AppointmentsPage() {
   const [page, setPage] = useState(1);
   const [tab, setTab] = useState<Tab>('upcoming');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const limit = 10;
 
   const load = () => {
@@ -31,8 +32,13 @@ export default function AppointmentsPage() {
 
   const cancel = async (id: string) => {
     if (!confirm('Annuler ce rendez-vous ?')) return;
-    await api.patch(`/appointments/${id}/status`, { status: 'CANCELLED' });
-    load();
+    setError('');
+    try {
+      await api.patch(`/appointments/${id}/status`, { status: 'CANCELLED' });
+      load();
+    } catch {
+      setError('Impossible d\'annuler ce rendez-vous');
+    }
   };
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -41,6 +47,7 @@ export default function AppointmentsPage() {
     <div>
       <h1 className="text-2xl font-bold">Mes rendez-vous</h1>
       <p className="text-slate-500 mt-1">Historique et rendez-vous à venir</p>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2 mt-4">
         <button

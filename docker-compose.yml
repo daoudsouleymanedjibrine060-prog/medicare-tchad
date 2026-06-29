@@ -36,7 +36,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+    command: sh -c "npx prisma migrate deploy && npx tsx scripts/seed-if-empty.ts && npm run dev"
 
   frontend:
     build:

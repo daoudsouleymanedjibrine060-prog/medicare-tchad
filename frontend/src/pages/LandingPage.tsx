@@ -81,7 +81,7 @@ export default function LandingPage() {
             { icon: Search, title: 'Recherche de médecins', desc: 'Par spécialité, ville ou nom' },
             { icon: Calendar, title: 'Prise de RDV en ligne', desc: 'Créneaux disponibles en temps réel' },
             { icon: MapPin, title: 'Carte des établissements', desc: 'Hôpitaux, cliniques, cabinets et laboratoires' },
-            { icon: Shield, title: 'Notifications SMS', desc: 'Confirmations et rappels (+235)' },
+            { icon: Shield, title: 'Rappels SMS', desc: 'Confirmations et rappels si SMS activé (+235)' },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="bg-white p-6 rounded-xl border border-slate-200">
               <Icon className="w-8 h-8 text-primary-600 mb-4" />

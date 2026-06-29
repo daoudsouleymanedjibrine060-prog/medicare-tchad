@@ -59,7 +59,7 @@ export default function SuperAdminDashboard() {
     <div>
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold">LedControl — Super Administration</h1>
+          <h1 className="text-2xl font-bold">MediCare Tchad — Super Administration</h1>
           <p className="text-slate-500 mt-1">Supervision nationale MediCare Tchad</p>
         </div>
         <button onClick={exportCsv} className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700">

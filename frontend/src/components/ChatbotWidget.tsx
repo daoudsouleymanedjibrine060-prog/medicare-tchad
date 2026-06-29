@@ -45,13 +45,13 @@ export default function ChatbotWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 flex items-center justify-center z-40"
+        className="fixed bottom-20 right-6 w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 flex items-center justify-center z-40 lg:bottom-6"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col max-h-[28rem]">
+        <div className="fixed bottom-32 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col max-h-[28rem] lg:bottom-24">
           <div className="flex items-center justify-between p-4 border-b bg-primary-600 text-white rounded-t-2xl">
             <span className="font-medium text-sm">Assistant MediCare</span>
             <button onClick={() => setOpen(false)}><X className="w-5 h-5" /></button>

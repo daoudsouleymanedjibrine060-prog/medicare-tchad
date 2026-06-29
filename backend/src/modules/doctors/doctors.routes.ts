@@ -5,7 +5,7 @@ import { prisma } from '../../config/database';
 import { authenticate, optionalAuth, requireRole } from '../../middleware/auth';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { hashPassword } from '../../services/auth.service';
-import { normalizePhone } from '../../utils/helpers';
+import { normalizePhone, stripUserSecrets } from '../../utils/helpers';
 import { getAvailableSlots, getSlotsWithStatus } from '../../services/appointment.service';
 import { paramId } from '../../utils/params';
 
@@ -66,7 +66,7 @@ router.get('/', optionalAuth, validateQuery(searchSchema), async (req, res) => {
     prisma.doctor.count({ where }),
   ]);
 
-  return res.json({ data: doctors, total, page, limit });
+  return res.json(stripUserSecrets({ data: doctors, total, page, limit }));
 });
 
 router.get('/specialties/list', async (_req, res) => {
@@ -86,7 +86,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
   });
   if (!doctor) return res.status(404).json({ error: 'Médecin introuvable' });
   const { passwordHash, ...userSafe } = doctor.user;
-  return res.json({ ...doctor, user: userSafe });
+  return res.json(stripUserSecrets({ ...doctor, user: userSafe }));
 });
 
 router.get('/:id/slots', async (req, res) => {

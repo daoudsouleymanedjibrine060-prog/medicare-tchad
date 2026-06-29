@@ -47,20 +47,25 @@ export function generateSlots(startTime: string, endTime: string, slotDuration: 
   return slots;
 }
 
-export function sanitizeUser(user: {
-  id: string;
-  email: string;
-  phone: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  isActive: boolean;
-  createdAt: Date;
-  patient?: unknown;
-  doctor?: unknown;
-  assistant?: unknown;
-  admin?: unknown;
-}) {
-  const { passwordHash: _, ...rest } = user as typeof user & { passwordHash?: string };
-  return rest;
+export function sanitizeUser<T extends Record<string, unknown>>(user: T): Omit<T, 'passwordHash'> {
+  const { passwordHash: _, ...rest } = user as T & { passwordHash?: string };
+  return rest as Omit<T, 'passwordHash'>;
+}
+
+/** Retire passwordHash récursivement des objets renvoyés par l'API. */
+export function stripUserSecrets<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (Array.isArray(data)) {
+    return data.map((item) => stripUserSecrets(item)) as T;
+  }
+  if (typeof data === 'object' && !(data instanceof Date)) {
+    const obj = data as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === 'passwordHash') continue;
+      result[key] = stripUserSecrets(value);
+    }
+    return result as T;
+  }
+  return data;
 }

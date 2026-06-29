@@ -10,6 +10,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  const [loadError, setLoadError] = useState('');
+
   useEffect(() => {
     Promise.all([
       api.get('/patients/profile'),
@@ -28,6 +30,8 @@ export default function ProfilePage() {
         cityId: p.cityId || '',
       });
       setCities(cityRes.data);
+    }).catch(() => {
+      setLoadError('Impossible de charger votre profil');
     }).finally(() => setLoading(false));
   }, []);
 
@@ -35,6 +39,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     setMessage('');
+    if (!/^\+235[0-9]{8}$/.test(profile.phone.replace(/\s/g, ''))) {
+      setMessage('Erreur : téléphone invalide (format +235XXXXXXXX)');
+      setSaving(false);
+      return;
+    }
     try {
       await api.patch('/patients/profile', {
         ...profile,
@@ -55,7 +64,8 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold">Paramètres</h1>
       <p className="text-slate-500 mt-1">Gérez votre profil patient</p>
       <form onSubmit={save} className="mt-6 bg-white rounded-xl border p-6 max-w-lg space-y-4">
-        {message && <div className="text-sm text-emerald-600">{message}</div>}
+        {loadError && <div className="text-sm text-red-600">{loadError}</div>}
+        {message && <div className={`text-sm ${message.includes('Erreur') ? 'text-red-600' : 'text-emerald-600'}`}>{message}</div>}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Prénom</label>
