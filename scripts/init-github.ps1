@@ -46,8 +46,13 @@ if (-not $ghAvailable) {
     exit 0
 }
 
-$authCheck = gh auth status 2>&1
-if ($LASTEXITCODE -ne 0) {
+$prevEa = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+gh auth status 2>&1 | Out-Null
+$ghAuthed = $LASTEXITCODE -eq 0
+$ErrorActionPreference = $prevEa
+
+if (-not $ghAuthed) {
     Write-Host ""
     Write-Host "Non connecté à GitHub. Exécutez :" -ForegroundColor Yellow
     Write-Host "  gh auth login"
