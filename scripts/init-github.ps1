@@ -54,13 +54,21 @@ $ErrorActionPreference = $prevEa
 
 if (-not $ghAuthed) {
     Write-Host ""
-    Write-Host "Non connecté à GitHub. Exécutez :" -ForegroundColor Yellow
+    Write-Host "Non connecte a GitHub. Executez :" -ForegroundColor Yellow
     Write-Host "  gh auth login"
     Write-Host "Puis relancez : .\scripts\init-github.ps1"
     Write-Host ""
-    Write-Host "Le commit local est prêt. Remote manuel :" -ForegroundColor Green
-    Write-Host "  git remote add origin https://github.com/VOTRE_COMPTE/medicare-tchad.git"
-    Write-Host "  git push -u origin main"
+    $existingRemote = git remote get-url origin 2>$null
+    if ($existingRemote) {
+        Write-Host "Remote deja configure : $existingRemote" -ForegroundColor Green
+        Write-Host "Apres gh auth login :" -ForegroundColor Yellow
+        Write-Host "  gh repo create $RepoName --public --source=. --push"
+        Write-Host "  # ou si le depot existe deja sur GitHub : git push -u origin main"
+    } else {
+        Write-Host "Le commit local est pret. Remote manuel :" -ForegroundColor Green
+        Write-Host "  git remote add origin https://github.com/VOTRE_COMPTE/$RepoName.git"
+        Write-Host "  git push -u origin main"
+    }
     exit 0
 }
 
