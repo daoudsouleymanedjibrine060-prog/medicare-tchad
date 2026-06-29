@@ -1,7 +1,7 @@
 # Finalise le push GitHub apres `gh auth login`.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\github-finish.ps1
 param(
-    [string]$RepoName = "Medicare-Tchad",
+    [string]$RepoName = "medicare-tchad",
     [string]$GitHubUser = "daoudsouleymanedjibrine060-prog"
 )
 
