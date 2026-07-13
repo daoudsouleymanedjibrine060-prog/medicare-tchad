@@ -1,4 +1,6 @@
-﻿import { Role, EstablishmentType, AppointmentStatus } from '@prisma/client';
+﻿import 'dotenv/config';
+
+import { Role, EstablishmentType, AppointmentStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 import { createPrismaClient } from '../src/config/database';
