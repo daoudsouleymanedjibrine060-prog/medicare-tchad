@@ -1,8 +1,17 @@
 # MediCare Tchad
 
-Plateforme web de gestion des rendez-vous médicaux pour le Tchad (indicatif +235).
+Plateforme web de **gestion des rendez-vous médicaux** pour le Tchad (indicatif +235).
 
-Fonctionnalités : patients, médecins, assistants, administrateurs, rendez-vous, laboratoires, carte hybride, chatbot.
+**Version :** v1.0.0
+
+### Périmètre v1.0.0
+
+- Patients, assistants, administrateurs, super-administrateurs
+- Recherche de médecins, prise et gestion de rendez-vous
+- Laboratoires, carte hybride, messages, notifications, chatbot
+- Tableau de bord et administration
+
+**Hors v1.0.0** (prévu éventuellement en v1.1+) : dossiers médicaux complets, ordonnances, portail médecin autonome (les assistants gèrent les médecins).
 
 ## Stack
 
@@ -28,7 +37,7 @@ Ou via npm :
 npm run start:dev
 ```
 
-Le script démarre Docker Desktop si besoin, lance la stack, vérifie l'API (34 tests) et affiche les URLs.
+Le script démarre Docker Desktop si besoin, lance la stack, vérifie l'API et affiche les URLs.
 
 - Frontend: http://localhost:5173
 - API: http://localhost:4000/api/v1/health
@@ -118,6 +127,8 @@ Voir :
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [API REST](docs/API.md)
+- [Manuel utilisateur](docs/MANUEL_UTILISATEUR.md)
+- [Changelog](CHANGELOG.md)
 - [Oracle Cloud (gratuit)](docs/ORACLE_CLOUD.md)
 - [Déploiement](docs/DEPLOYMENT.md)
 - [Mémoire Tchad](docs/MEMOIRE_TCHAD.md)

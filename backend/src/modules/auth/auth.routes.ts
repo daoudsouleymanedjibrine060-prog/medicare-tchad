@@ -150,4 +150,25 @@ router.get('/me', authenticate, async (req, res) => {
   return res.json(sanitizeUser(user));
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+router.post('/change-password', authenticate, validateBody(changePasswordSchema), async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+  const valid = await comparePassword(currentPassword, user.passwordHash);
+  if (!valid) return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await hashPassword(newPassword) },
+  });
+
+  return res.json({ message: 'Mot de passe mis à jour' });
+});
+
 export default router;

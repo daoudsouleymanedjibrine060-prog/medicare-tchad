@@ -97,6 +97,7 @@ model Doctor {
   blockedSlots    BlockedSlot[]
   establishments  DoctorEstablishment[]
 
+  @@index([specialtyId])
   @@map("doctors")
 }
 
@@ -157,6 +158,8 @@ model Establishment {
   doctors               DoctorEstablishment[]
   appointments          Appointment[]
 
+  @@index([cityId])
+  @@index([type])
   @@map("establishments")
 }
 

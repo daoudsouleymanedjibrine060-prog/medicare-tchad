@@ -64,6 +64,24 @@ export default function PatientDashboard() {
     }
   };
 
+  const markNotificationRead = async (id: string) => {
+    try {
+      await api.patch(`/notifications/${id}/read`);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    } catch {
+      setError('Impossible de marquer la notification comme lue');
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await api.patch('/notifications/read-all');
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch {
+      setError('Impossible de marquer toutes les notifications comme lues');
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   const firstName = user?.firstName || 'Patient';
@@ -107,17 +125,39 @@ export default function PatientDashboard() {
 
       {notifications.length > 0 && (
         <div className="mt-8 bg-white rounded-xl border p-5">
-          <h2 className="font-semibold mb-3">Notifications récentes</h2>
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <h2 className="font-semibold">Notifications récentes</h2>
+            {unreadNotifications > 0 && (
+              <button
+                type="button"
+                onClick={markAllNotificationsRead}
+                className="text-xs text-primary-600 border border-primary-200 px-2.5 py-1 rounded hover:bg-primary-50"
+              >
+                Tout marquer comme lu
+              </button>
+            )}
+          </div>
           <ul className="space-y-2">
             {notifications.slice(0, 5).map((n) => (
               <li key={n.id} className={`text-sm p-3 rounded-lg border ${n.isRead ? 'bg-slate-50' : 'bg-blue-50 border-blue-100'}`}>
                 <p className="font-medium">{n.title}</p>
                 <p className="text-slate-600">{n.message}</p>
-                {n.link && (
-                  <Link to={n.link} className="text-xs text-primary-600 hover:underline mt-1 inline-block">
-                    Voir détails
-                  </Link>
-                )}
+                <div className="mt-1 flex flex-wrap gap-3">
+                  {n.link && (
+                    <Link to={n.link} className="text-xs text-primary-600 hover:underline">
+                      Voir détails
+                    </Link>
+                  )}
+                  {!n.isRead && (
+                    <button
+                      type="button"
+                      onClick={() => markNotificationRead(n.id)}
+                      className="text-xs text-slate-600 hover:underline"
+                    >
+                      Marquer comme lu
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

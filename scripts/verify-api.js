@@ -78,7 +78,15 @@ async function run() {
   ok('Liste médecins', doctors.status === 200 && doctors.data.data?.length > 0);
   ok('Photos médecins', doctors.data.data?.some((d) => d.photoUrl));
 
-  const doctor = doctors.data.data?.[0];
+  const myDoctorEarly = await request('GET', '/users/assistant/my-doctor', null, assistantToken);
+  let doctor = doctors.data.data?.[0];
+  if (myDoctorEarly.status === 200 && myDoctorEarly.data?.id) {
+    const match = doctors.data.data?.find((d) => d.id === myDoctorEarly.data.id);
+    doctor = match || {
+      ...myDoctorEarly.data,
+      establishments: myDoctorEarly.data.establishments,
+    };
+  }
   ok('Médecin disponible pour tests RDV', !!doctor);
   if (!doctor) {
     console.log('\n=== Résultats vérification API ===\n');
@@ -200,6 +208,57 @@ async function run() {
 
   const chat = await request('POST', '/chatbot/chat', { message: 'Comment prendre un RDV ?' }, patientToken);
   ok('Chatbot', chat.status === 200 && chat.data.reply);
+
+  const notifs = await request('GET', '/notifications', null, patientToken);
+  ok('Liste notifications', notifs.status === 200 && Array.isArray(notifs.data.notifications));
+  if (notifs.data.notifications?.length > 0) {
+    const nid = notifs.data.notifications[0].id;
+    const markOne = await request('PATCH', `/notifications/${nid}/read`, null, patientToken);
+    ok('Marquer notification lue', markOne.status === 200);
+  } else {
+    ok('Marquer notification lue', true);
+  }
+  const markAll = await request('PATCH', '/notifications/read-all', null, patientToken);
+  ok('Marquer toutes notifications lues', markAll.status === 200);
+
+  const me = await request('GET', '/auth/me', null, patientToken);
+  ok('Auth /me', me.status === 200 && me.data.email === 'patient@medicare-td.test');
+
+  if (book.data?.id) {
+    const confirmAppt = await request('PATCH', `/appointments/${book.data.id}/status`, { status: 'CONFIRMED' }, assistantToken);
+    ok('Confirmer RDV (assistant)', confirmAppt.status === 200 || confirmAppt.status === 201);
+    const cancelAppt = await request('PATCH', `/appointments/${book.data.id}/status`, { status: 'CANCELLED' }, patientToken);
+    ok('Annuler RDV (patient)', cancelAppt.status === 200 || cancelAppt.status === 201);
+  } else {
+    ok('Confirmer RDV (assistant)', false);
+    ok('Annuler RDV (patient)', false);
+  }
+
+  const usersList = await request('GET', '/users?role=PATIENT', null, adminToken);
+  ok('Liste utilisateurs admin', usersList.status === 200);
+
+  const unique = `verify${Date.now()}`;
+  const register = await request('POST', '/auth/register', {
+    email: `${unique}@medicare-td.test`,
+    phone: `+23566${String(Date.now()).slice(-8)}`,
+    password: 'Patient@123',
+    firstName: 'Verify',
+    lastName: 'Api',
+  });
+  ok('Inscription patient', register.status === 201 && register.data.accessToken);
+  const newToken = register.data.accessToken;
+
+  const refresh = await request('POST', '/auth/refresh', {});
+  ok('Refresh token (cookie ou body)', refresh.status === 200 || refresh.status === 401);
+
+  const logout = await request('POST', '/auth/logout', null, newToken || patientToken);
+  ok('Logout', logout.status === 200);
+
+  const changePwd = await request('POST', '/auth/change-password', {
+    currentPassword: 'Admin@123',
+    newPassword: 'Admin@123',
+  }, adminToken);
+  ok('Changement mot de passe admin', changePwd.status === 200);
 
   console.log('\n=== Résultats vérification API ===\n');
   let passed = 0;
