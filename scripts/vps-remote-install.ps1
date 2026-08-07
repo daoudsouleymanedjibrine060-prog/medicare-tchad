@@ -1,15 +1,15 @@
-# Lance l'installation MediCare Tchad sur le VPS via SSH (depuis Windows).
+# Lance l'installation MediCare Tchad sur le VPS Oracle via SSH (depuis Windows).
 # Les commandes apt/git/bash s'executent sur le serveur Linux, pas dans PowerShell.
 #
 # Usage:
-#   .\scripts\vps-remote-install.ps1 -VpsHost 95.217.48.123 -GitHubRepo https://github.com/USER/medicare-tchad.git
-#   .\scripts\vps-remote-install.ps1 -Interactive   # ouvre SSH + copie les commandes bash
+#   .\scripts\vps-remote-install.ps1 -VpsHost 129.146.x.x -SshUser ubuntu -UseLocalCode
+#   .\scripts\vps-remote-install.ps1 -Interactive -VpsHost IP -SshUser ubuntu
 param(
     [string]$VpsHost = "",
     [string]$GitHubRepo = "",
     [string]$Domain = "medicare-tchad.com",
     [string]$Email = "admin@medicare-tchad.com",
-    [string]$SshUser = "root",
+    [string]$SshUser = "ubuntu",
     [switch]$Interactive,
     [switch]$ManualClone,
     [switch]$UseLocalCode
@@ -45,29 +45,32 @@ if (-not $GitHubRepo) {
     $GitHubRepo = Get-GitHubRepoFromOrigin
 }
 
+# sudo pour utilisateur ubuntu (Oracle Cloud) ; inutile si deja root
+$sudoPrefix = if ($SshUser -eq "root") { "" } else { "sudo " }
+
 $bashLocalInstall = @"
-apt update && apt install -y git tar
-rm -rf /opt/medicare-tchad
-mkdir -p /opt/medicare-tchad
-tar xzf /tmp/medicare-tchad.tgz -C /opt/medicare-tchad
+${sudoPrefix}apt update && ${sudoPrefix}apt install -y git tar
+${sudoPrefix}rm -rf /opt/medicare-tchad
+${sudoPrefix}mkdir -p /opt/medicare-tchad
+${sudoPrefix}tar xzf /tmp/medicare-tchad.tgz -C /opt/medicare-tchad
 cd /opt/medicare-tchad
-chmod +x scripts/*.sh
-./scripts/vps-first-install.sh --domain '$Domain' --email '$Email'
+${sudoPrefix}chmod +x scripts/*.sh
+${sudoPrefix}./scripts/vps-first-install.sh --domain '$Domain' --email '$Email'
 "@.Trim()
 
 $bashOneLiner = @"
-curl -fsSL https://raw.githubusercontent.com/$(if ($GitHubRepo -match 'github\.com/([^/]+/[^/.]+)') { $matches[1] } else { 'VOTRE_COMPTE/medicare-tchad' })/main/scripts/vps-first-install.sh | bash -s -- --repo '$GitHubRepo' --domain '$Domain' --email '$Email'
+curl -fsSL https://raw.githubusercontent.com/$(if ($GitHubRepo -match 'github\.com/([^/]+/[^/.]+)') { $matches[1] } else { 'daoudsouleymanedjibrine060-prog/medicare-tchad' })/main/scripts/vps-first-install.sh | ${sudoPrefix}bash -s -- --repo '$GitHubRepo' --domain '$Domain' --email '$Email'
 "@.Trim()
 
 $bashManual = @"
-apt update && apt install -y git
-git clone '$GitHubRepo' /opt/medicare-tchad
+${sudoPrefix}apt update && ${sudoPrefix}apt install -y git
+${sudoPrefix}git clone '$GitHubRepo' /opt/medicare-tchad
 cd /opt/medicare-tchad
-chmod +x scripts/*.sh
-./scripts/vps-first-install.sh --domain '$Domain' --email '$Email'
+${sudoPrefix}chmod +x scripts/*.sh
+${sudoPrefix}./scripts/vps-first-install.sh --domain '$Domain' --email '$Email'
 "@.Trim()
 
-Write-Host "=== Installation VPS MediCare Tchad (depuis Windows) ===" -ForegroundColor Cyan
+Write-Host "=== Installation Oracle Cloud MediCare Tchad (depuis Windows) ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Ces commandes s'executent sur le VPS Ubuntu via SSH, pas dans PowerShell." -ForegroundColor Yellow
 Write-Host ""
@@ -84,9 +87,9 @@ if (-not $VpsHost) {
 
 $bootstrap = Join-Path $PSScriptRoot "vps-ssh-bootstrap.ps1"
 if (Test-Path $bootstrap) {
-    & $bootstrap -VpsHost $VpsHost -Wait -WaitSeconds 60 -PollInterval 10
+    & $bootstrap -VpsHost $VpsHost -SshUser $SshUser -Wait -WaitSeconds 60 -PollInterval 10
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "SSH inaccessible. Lancez : powershell -ExecutionPolicy Bypass -File scripts\vps-ssh-bootstrap.ps1" -ForegroundColor Red
+        Write-Host "SSH inaccessible. Lancez : powershell -ExecutionPolicy Bypass -File scripts\vps-ssh-bootstrap.ps1 -VpsHost $VpsHost -SshUser $SshUser" -ForegroundColor Red
         exit 1
     }
 }

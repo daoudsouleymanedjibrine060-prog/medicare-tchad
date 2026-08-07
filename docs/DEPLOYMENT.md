@@ -1,6 +1,8 @@
 # Déploiement Production — MediCare Tchad
 
-Guide complet pour mettre la plateforme en ligne (VPS + Docker + HTTPS).
+Guide complet pour mettre la plateforme en ligne (**Oracle Cloud Always Free** recommandé + Docker + HTTPS).
+
+Stack : **React** (frontend) + **Node.js / Express** (API) + **MySQL 8**.
 
 ## Architecture
 
@@ -13,37 +15,47 @@ Nginx (80 → redirect, 443 → TLS)
     └── MySQL   (réseau Docker interne uniquement)
 ```
 
-## Mise en ligne complète (VPS)
+## Mise en ligne complète (Oracle Cloud — gratuit)
 
-Guide détaillé pour obtenir VPS + domaine : [VPS_ONBOARDING.md](VPS_ONBOARDING.md)
+1. Créer la VM Always Free : [ORACLE_CLOUD.md](ORACLE_CLOUD.md) et [VPS_ONBOARDING.md](VPS_ONBOARDING.md)
+2. Ouvrir TCP **22 / 80 / 443** dans la Security List OCI
+3. Depuis Windows :
 
-Installation automatique sur le VPS (une commande) :
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\vps-deploy-all.ps1 -VpsHost VOTRE_IP -SshUser ubuntu
+```
+
+Installation manuelle sur la VM :
 
 ```bash
 ./scripts/vps-first-install.sh --domain medicare-tchad.com --email admin@medicare-tchad.com
+# ou avec sslip.io : --domain 129-146-10-20.sslip.io
 ```
 
 ## Prérequis VPS
 
-- **OS** : Ubuntu 22.04+ ou Debian 12
-- **Ressources** : 2 vCPU, 4 GB RAM minimum
+- **Fournisseur** : Oracle Cloud Always Free (prioritaire) — ou tout VPS Ubuntu compatible Docker
+- **OS** : Ubuntu 22.04+ (utilisateur SSH Oracle : **`ubuntu`**)
+- **Ressources** : idéal 2+ OCPU / ≥ 8 Go RAM (shape A1.Flex) ; minimum pour démo ~2 Go
 - **Logiciels** : Docker + Docker Compose plugin
-- **Domaine** : enregistrement DNS `A` pointant vers l'IP du VPS
-- **Ports ouverts** : 22 (SSH), 80 (HTTP), 443 (HTTPS)
+- **Domaine** : DNS `A` vers l'IP **ou** `x-x-x-x.sslip.io` (gratuit)
+- **Ports ouverts** : 22 (SSH), 80 (HTTP), 443 (HTTPS) — **Security List OCI + UFW**
 - **Ne pas exposer** : 3306 (MySQL reste interne)
 
-## Étape 1 — Préparer le serveur
+## Étape 1 — Préparer le serveur (Oracle Ubuntu)
 
 ```bash
-# Connexion SSH
-ssh root@votre-ip-vps
+# Connexion SSH (Oracle Ubuntu — pas root)
+ssh ubuntu@votre-ip-publique
 
-# Installer Docker (Ubuntu)
-curl -fsSL https://get.docker.com | sh
+# Installer Docker
+curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
+# se reconnecter pour prendre le groupe docker
 
 # Cloner le projet
-git clone https://github.com/VOTRE_ORG/medicare-tchad.git /opt/medicare-tchad
+sudo git clone https://github.com/daoudsouleymanedjibrine060-prog/medicare-tchad.git /opt/medicare-tchad
+sudo chown -R ubuntu:ubuntu /opt/medicare-tchad
 cd /opt/medicare-tchad
 
 # Pare-feu (UFW)
@@ -214,6 +226,8 @@ git pull
 
 | Problème | Solution |
 |----------|----------|
+| SSH timeout Oracle | Security List sans port **22** — [ORACLE_CLOUD.md](ORACLE_CLOUD.md) |
+| Site inaccessible (80/443) | Ingress Security List + `ufw allow 80,443` sur la VM |
 | Nginx ne démarre pas (SSL) | Certificats manquants → utiliser `nginx.bootstrap.conf` ou lancer `setup-ssl.sh` |
 | Erreur CORS | Vérifier `FRONTEND_URL=https://...` dans `.env`, redémarrer l'API |
 | API ne démarre pas | `docker logs medicare-api-prod` — vérifier MySQL et `DATABASE_URL` |

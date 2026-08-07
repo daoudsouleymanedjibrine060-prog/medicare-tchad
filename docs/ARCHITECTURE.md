@@ -63,3 +63,10 @@ Job quotidien à 8h UTC : envoie SMS + notification aux patients avec RDV confir
 - Skeleton loaders sur les listes
 - Indicateur hors ligne dans le dashboard
 - Chatbot : réponses courtes (max 400 tokens)
+
+## Hébergement production
+
+- **Cible gratuite** : Oracle Cloud Always Free (Ubuntu + Docker Compose)
+- **Frontend React** + **API Node.js** + **MySQL** sur la même VM
+- Reverse proxy **Nginx** + HTTPS Let's Encrypt
+- Doc : [ORACLE_CLOUD.md](ORACLE_CLOUD.md), [VPS_ONBOARDING.md](VPS_ONBOARDING.md), [DEPLOYMENT.md](DEPLOYMENT.md)

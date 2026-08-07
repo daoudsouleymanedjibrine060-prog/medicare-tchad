@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
-# Installation complète MediCare Tchad sur un VPS Ubuntu/Debian
+# Installation complète MediCare Tchad sur Oracle Cloud / VPS Ubuntu
 # Usage:
-#   ./scripts/vps-first-install.sh --domain medicare-tchad.com --email admin@medicare-tchad.com
-#   ./scripts/vps-first-install.sh --repo https://github.com/user/medicare-tchad.git --domain ... --email ...
+#   sudo ./scripts/vps-first-install.sh --domain medicare-tchad.com --email admin@medicare-tchad.com
+#   sudo ./scripts/vps-first-install.sh --repo https://github.com/user/medicare-tchad.git --domain ... --email ...
+# Oracle Cloud : utilisateur SSH = ubuntu ; lancer avec sudo.
 set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Relance avec sudo (Oracle Ubuntu : sudo ./scripts/vps-first-install.sh ...)"
+  exec sudo -E bash "$0" "$@"
+fi
 
 REPO=""
 DOMAIN=""
@@ -26,7 +32,7 @@ if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
   exit 1
 fi
 
-echo "=== Installation MediCare Tchad sur VPS ==="
+echo "=== Installation MediCare Tchad (Oracle / VPS Ubuntu) ==="
 echo "Domaine: $DOMAIN"
 echo "Email SSL: $EMAIL"
 
@@ -38,13 +44,16 @@ if ! command -v docker &>/dev/null; then
   systemctl start docker
 fi
 
-# Pare-feu
+# Pare-feu local (complète la Security List Oracle)
 if command -v ufw &>/dev/null; then
   ufw allow 22/tcp 2>/dev/null || true
   ufw allow 80/tcp 2>/dev/null || true
   ufw allow 443/tcp 2>/dev/null || true
   ufw --force enable 2>/dev/null || true
 fi
+iptables -I INPUT -p tcp --dport 22 -j ACCEPT 2>/dev/null || true
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
 
 # Clone ou mise à jour
 if [ -n "$REPO" ]; then
@@ -80,7 +89,7 @@ RESOLVED=$(dig +short "$DOMAIN" 2>/dev/null | head -1 || true)
 PUBLIC_IP=$(curl -sf ifconfig.me 2>/dev/null || curl -sf icanhazip.com 2>/dev/null || true)
 if [ -n "$RESOLVED" ] && [ -n "$PUBLIC_IP" ] && [ "$RESOLVED" != "$PUBLIC_IP" ]; then
   echo "ATTENTION: DNS ($RESOLVED) != IP serveur ($PUBLIC_IP)"
-  echo "Configurez un enregistrement A @ -> $PUBLIC_IP avant SSL"
+  echo "Configurez un enregistrement A @ -> $PUBLIC_IP avant SSL (ou utilisez IP.sslip.io)"
   SKIP_SSL=true
 fi
 

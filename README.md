@@ -12,25 +12,44 @@ Fonctionnalités : patients, médecins, assistants, administrateurs, rendez-vous
 - **Cartographie:** Google Maps (hybride) ou OpenStreetMap + Leaflet
 - **SMS:** Africa's Talking (+235)
 - **Chatbot:** OpenAI API (fallback local)
+- **Hébergement prod (gratuit):** Oracle Cloud Always Free + Docker + Nginx + Let's Encrypt
 
-## Démarrage rapide (Docker)
+## Démarrage rapide (Windows — une commande)
 
-```bash
-cd medicare-tchad
-docker compose up -d
-# Première installation uniquement :
-docker exec medicare-api npm run db:seed
+Depuis la racine du projet (`medicare-tchad`) :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-dev.ps1
 ```
+
+Ou via npm :
+
+```powershell
+npm run start:dev
+```
+
+Le script démarre Docker Desktop si besoin, lance la stack, vérifie l'API (34 tests) et affiche les URLs.
 
 - Frontend: http://localhost:5173
 - API: http://localhost:4000/api/v1/health
-- MySQL: localhost:3306
+- Patient démo: `patient@medicare-td.test` / `Patient@123`
+
+## Démarrage rapide (Docker manuel)
+
+```powershell
+cd medicare-tchad
+docker compose up -d
+```
+
+Première installation uniquement (base vide) :
+
+```powershell
+docker exec medicare-api npm run db:seed
+```
 
 ### Vérification API
 
-Une fois l'API démarrée avec le seed :
-
-```bash
+```powershell
 npm run verify:api
 ```
 
@@ -69,7 +88,17 @@ npm run dev
 | Assistant | assistant1@medicare-td.test | Admin@123 |
 | Patient | patient@medicare-td.test | Patient@123 |
 
-## Production
+## Production (Oracle Cloud Always Free — gratuit)
+
+Hébergement recommandé : **Oracle Cloud Always Free** (VM Ubuntu + Docker). Stack inchangée : React + Node.js + MySQL.
+
+```powershell
+# Windows : guide + clé SSH, puis déploiement
+powershell -ExecutionPolicy Bypass -File scripts\vps-oracle-create.ps1
+powershell -ExecutionPolicy Bypass -File scripts\vps-deploy-all.ps1 -VpsHost VOTRE_IP -SshUser ubuntu
+```
+
+Sur la VM :
 
 ```bash
 cp .env.example .env
@@ -79,12 +108,17 @@ chmod +x scripts/*.sh
 ./scripts/setup-ssl.sh votre-domaine.com admin@votre-domaine.com
 ```
 
-Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le déploiement complet et [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) pour **mettre le site en ligne** (VPS + domaine + GitHub).
+Voir :
+
+- [docs/ORACLE_CLOUD.md](docs/ORACLE_CLOUD.md) — guide Oracle Always Free
+- [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) — VM + DNS + GitHub
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Docker prod, SSL, backups
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [API REST](docs/API.md)
+- [Oracle Cloud (gratuit)](docs/ORACLE_CLOUD.md)
 - [Déploiement](docs/DEPLOYMENT.md)
 - [Mémoire Tchad](docs/MEMOIRE_TCHAD.md)
 

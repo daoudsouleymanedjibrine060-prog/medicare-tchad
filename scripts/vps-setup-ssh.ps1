@@ -1,7 +1,8 @@
-# Affiche la cle SSH publique et les etapes pour l'ajouter sur Hetzner.
-# Une fois la cle ajoutee au serveur, relancez vps-remote-install.ps1
+# Affiche la cle SSH publique et les etapes pour l'ajouter sur Oracle Cloud.
+# Une fois la cle ajoutee / les ports ouverts, relancez vps-remote-install.ps1
 param(
-    [string]$VpsHost = ""
+    [string]$VpsHost = "",
+    [string]$SshUser = "ubuntu"
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,9 +24,9 @@ if (-not (Test-Path $keyPath)) {
 $pubKey = Get-Content "$keyPath.pub" -Raw
 if (-not $VpsHost) { $VpsHost = Get-VpsHostFromKnownHosts }
 
-Write-Host "=== Configuration SSH pour le VPS MediCare Tchad ===" -ForegroundColor Cyan
+Write-Host "=== Configuration SSH Oracle Cloud - MediCare Tchad ===" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Cle publique (a ajouter sur Hetzner) :" -ForegroundColor Yellow
+Write-Host "Cle publique (a ajouter a la creation de l'instance Oracle) :" -ForegroundColor Yellow
 Write-Host $pubKey.Trim()
 Write-Host ""
 try {
@@ -33,16 +34,17 @@ try {
     Write-Host "Cle copiee dans le presse-papiers." -ForegroundColor Green
 } catch { }
 
-Write-Host "Etapes Hetzner Cloud :" -ForegroundColor Cyan
-Write-Host "  1. https://console.hetzner.cloud -> votre serveur"
-Write-Host "  2. Power -> Reset -> cochez votre cle SSH (ou Rescue pour ajouter manuellement)"
-Write-Host "  3. Security -> SSH Keys -> Add SSH Key (pour les futurs serveurs)"
-Write-Host "     Cle a coller : voir ci-dessus (deja dans le presse-papiers)"
+Write-Host "Etapes Oracle Cloud :" -ForegroundColor Cyan
+Write-Host "  1. https://cloud.oracle.com -> Compute -> Instances"
+Write-Host "  2. Create instance : Ubuntu 22.04 + shape A1.Flex + coller la cle SSH"
+Write-Host "  3. VCN Security List : Ingress TCP 22, 80, 443"
+Write-Host "  4. SSH utilisateur : $SshUser (Canonical Ubuntu sur OCI)"
+Write-Host "  Doc : docs/ORACLE_CLOUD.md"
 if ($VpsHost) {
     Write-Host ""
-    Write-Host "VPS detecte : root@$VpsHost" -ForegroundColor Green
-    Write-Host "Test : ssh root@$VpsHost" -ForegroundColor White
+    Write-Host "VPS detecte : ${SshUser}@${VpsHost}" -ForegroundColor Green
+    Write-Host "Test : ssh ${SshUser}@${VpsHost}" -ForegroundColor White
     Write-Host ""
     Write-Host "Puis deploiement :" -ForegroundColor Cyan
-    Write-Host "  powershell -ExecutionPolicy Bypass -File scripts\vps-remote-install.ps1 -UseLocalCode -VpsHost $VpsHost" -ForegroundColor White
+    Write-Host "  powershell -ExecutionPolicy Bypass -File scripts\vps-remote-install.ps1 -UseLocalCode -VpsHost $VpsHost -SshUser $SshUser" -ForegroundColor White
 }

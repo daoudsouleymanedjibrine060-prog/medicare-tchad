@@ -1,36 +1,68 @@
-# Mise en ligne — Guide pas à pas (VPS + domaine)
+# Mise en ligne — Guide pas à pas (Oracle Cloud + domaine)
 
-Ce guide couvre les phases **1 et 2** du plan de déploiement. À faire **une seule fois** avant d'exécuter `scripts/vps-first-install.sh` sur le serveur.
+Ce guide couvre la création du serveur **gratuit** (Oracle Cloud Always Free), le DNS, GitHub, puis l'installation MediCare Tchad.
 
-## Phase 1 — Créer un VPS
+Stack inchangée : **React (frontend) + Node.js/Express (backend) + MySQL** via Docker.
 
-### Hetzner (recommandé, ~5 €/mois)
+## Phase 1 — Créer une VM Oracle Cloud (gratuit)
 
-1. Créer un compte sur [hetzner.com/cloud](https://www.hetzner.com/cloud)
-2. **New Project** → **Add Server**
-3. Paramètres :
-   - **Location** : Falkenstein ou Nuremberg (Allemagne) — bonne latence depuis le Tchad
-   - **Image** : Ubuntu 22.04
-   - **Type** : CX22 (2 vCPU, 4 GB RAM)
-   - **SSH key** : ajoutez votre clé publique (ou mot de passe root)
-4. Noter l'**IPv4 publique** (ex. `95.217.xxx.xxx`)
-5. Tester depuis Windows :
+### Compte Oracle Cloud Always Free
+
+1. Créer un compte sur [cloud.oracle.com](https://cloud.oracle.com) (région **Always Free eligible**, ex. Frankfurt `eu-frankfurt-1`)
+2. Une carte bancaire est souvent demandée pour vérification, puis **0 €/mois** sur le tier Always Free
+3. Ouvrir la console : [cloud.oracle.com](https://cloud.oracle.com) → **Compute** → **Instances**
+
+### Créer l'instance
+
+| Paramètre | Valeur recommandée |
+|-----------|-------------------|
+| Name | `medicare-tchad` |
+| Image | **Canonical Ubuntu 22.04** |
+| Shape | **VM.Standard.A1.Flex** (Ampere ARM) Always Free — ex. 2 OCPU / 12 Go RAM (idéalement 4 OCPU / 24 Go si dispo) |
+| Réseau | VCN par défaut + **Assign a public IPv4 address** |
+| SSH keys | Coller votre clé publique (`scripts\vps-setup-ssh.ps1`) |
+
+Si A1 (Ampere) est saturé dans la région, essayez une autre région Always Free, ou en dernier recours `VM.Standard.E2.1.Micro` (1 Go RAM — serré pour MySQL+API).
+
+### Ouvrir les ports (obligatoire)
+
+**Ingress** de la subnet (VCN → Security Lists ou Network Security Groups) :
+
+| Direction | Protocol | Port | Source |
+|-----------|----------|------|--------|
+| Ingress | TCP | 22 | Votre IP (ou 0.0.0.0/0 en démo) |
+| Ingress | TCP | 80 | 0.0.0.0/0 |
+| Ingress | TCP | 443 | 0.0.0.0/0 |
+
+Sans ces règles, le site et le SSH restent inaccessibles même si la VM tourne.
+
+### Connexion SSH (utilisateur Ubuntu, pas root)
+
+Sur Ubuntu Oracle Cloud, l'utilisateur SSH est **`ubuntu`** :
 
 ```powershell
-ssh root@95.217.xxx.xxx
+# Afficher / générer la clé
+powershell -ExecutionPolicy Bypass -File scripts\vps-setup-ssh.ps1 -VpsHost VOTRE_IP_PUBLIQUE
+
+# Test
+ssh ubuntu@VOTRE_IP_PUBLIQUE
 ```
 
-### OVH (alternative)
+Noter l'**IPv4 publique** affichée sur l'instance.
 
-1. [ovhcloud.com](https://www.ovhcloud.com) → VPS → VPS-1 ou Essential
-2. Ubuntu 22.04, région Europe
-3. Noter l'IP et tester SSH
+### Script guide Oracle
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\vps-oracle-create.ps1
+# Puis, une fois l'IP connue :
+powershell -ExecutionPolicy Bypass -File scripts\vps-oracle-create.ps1 -NewVpsHost VOTRE_IP
+```
 
 ---
 
-## Phase 2 — Acheter un domaine et DNS
+## Phase 2 — Domaine et DNS
 
-### Acheter le domaine
+### Option A — Domaine payant (recommandé en production)
 
 | Registrar | Extension | Prix indicatif |
 |-----------|-----------|----------------|
@@ -38,84 +70,82 @@ ssh root@95.217.xxx.xxx
 | Cloudflare | `.com` | prix coûtant |
 | OVH | `.com` / `.fr` | ~10 €/an |
 
-Exemple : `medicare-tchad.com`
-
-### Configurer le DNS
-
-Chez le registrar, zone DNS :
+Enregistrements DNS :
 
 | Type | Nom | Contenu | TTL |
 |------|-----|---------|-----|
-| A | `@` | `IP_DU_VPS` | 300 |
-| A | `www` | `IP_DU_VPS` | 300 |
+| A | `@` | `IP_ORACLE` | 300 |
+| A | `www` | `IP_ORACLE` | 300 |
 
-Vérifier la propagation (depuis Windows ou le VPS) :
+### Option B — Gratuit temporaire (sslip.io)
 
-```powershell
-nslookup medicare-tchad.com
+Sans domaine acheté, utilisez :
+
+```text
+IP-avec-tirets.sslip.io
 ```
 
-Attendre 5 min à 48 h si le résultat ne correspond pas encore à l'IP du VPS.
+Exemple : IP `129.146.10.20` → `129-146-10-20.sslip.io`
+
+Les scripts Windows choisissent automatiquement sslip.io si `medicare-tchad.com` n'est pas configuré :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\vps-resolve-domain.ps1 -VpsHost VOTRE_IP
+```
 
 ---
 
 ## Phase 3 — Pousser le code sur GitHub
 
-Sur votre PC Windows :
-
 ```powershell
 cd C:\Users\daoud\medicare-tchad
-powershell -ExecutionPolicy Bypass -File scripts\init-github.ps1
-```
-
-Puis connectez-vous à GitHub si demandé :
-
-```powershell
 gh auth login
-```
-
-Relancez le script ou poussez manuellement :
-
-```powershell
 git push -u origin main
 ```
 
+Dépôt attendu : `https://github.com/daoudsouleymanedjibrine060-prog/medicare-tchad.git`
+
 ---
 
-## Phase 4 — Installation automatique sur le VPS
+## Phase 4 — Installation sur la VM Oracle
 
-Une fois VPS + DNS + GitHub prêts, sur le **VPS** (SSH) :
+Depuis **Windows** (après SSH `ubuntu@IP` OK) :
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/VOTRE_COMPTE/medicare-tchad/main/scripts/vps-first-install.sh | bash -s -- \
-  --repo https://github.com/VOTRE_COMPTE/medicare-tchad.git \
-  --domain medicare-tchad.com \
-  --email admin@medicare-tchad.com
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\vps-deploy-all.ps1 -VpsHost VOTRE_IP -SshUser ubuntu
 ```
 
-Ou après clone manuel :
+Ou manuellement en SSH :
 
 ```bash
-git clone https://github.com/VOTRE_COMPTE/medicare-tchad.git /opt/medicare-tchad
+ssh ubuntu@VOTRE_IP
+sudo apt update && sudo apt install -y git
+sudo git clone https://github.com/daoudsouleymanedjibrine060-prog/medicare-tchad.git /opt/medicare-tchad
 cd /opt/medicare-tchad
-chmod +x scripts/*.sh
-./scripts/vps-first-install.sh --domain medicare-tchad.com --email admin@medicare-tchad.com
+sudo chmod +x scripts/*.sh
+# Domaine réel ou sslip.io
+sudo ./scripts/vps-first-install.sh --domain VOTRE_DOMAINE --email admin@medicare-tchad.com
 ```
 
-Ce script unique exécute : Docker, pare-feu, `.env`, déploiement, seed, SSL, cron, validation.
+Le script installe Docker, ouvre UFW, génère `.env`, déploie (API Node + frontend React + MySQL), seed, SSL.
 
 ---
 
 ## Résultat attendu
 
-- Site : `https://medicare-tchad.com`
-- API : `https://medicare-tchad.com/api/v1/health` → `{"status":"ok"}`
-- Tests : 34/34 `verify-api.js`
+- Site : `https://VOTRE_DOMAINE`
+- API : `https://VOTRE_DOMAINE/api/v1/health` → `{"status":"ok"}`
+- Vérif : `npm run verify:api -- https://VOTRE_DOMAINE/api/v1`
 
-## Budget mensuel
+## Budget
 
 | Poste | Coût |
 |-------|------|
-| VPS Hetzner CX22 | ~5 €/mois |
-| Domaine .com | ~1 €/mois (amorti) |
+| VM Oracle Cloud Always Free | **0 €/mois** |
+| Domaine .com (optionnel) | ~1 €/mois amorti |
 | SSL Let's Encrypt | Gratuit |
+| sslip.io (sans domaine) | Gratuit |
+
+## Alternative payante (hors scope Always Free)
+
+Hetzner / OVH restent possibles si vous préférez un VPS Europe payant (~5 €/mois). Les mêmes scripts Docker fonctionnent ; l'utilisateur SSH est alors souvent `root`. Voir l'historique dans les scripts `vps-hetzner-create.ps1` (déprécié, redirige vers Oracle).
