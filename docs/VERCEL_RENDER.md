@@ -87,11 +87,16 @@ Redéployez Render après modification.
 
 ## 5. Vérification
 
-```text
-https://VOTRE-APP.vercel.app/
-https://VOTRE-APP.vercel.app/api/v1/health
-https://VOTRE-APP.vercel.app/connexion
-https://VOTRE-APP.vercel.app/connexion/medecin
+Script automatique (après `.env.deploy` configuré) :
+
+```powershell
+.\scripts\deploy-cloud.ps1
+```
+
+Ou vérification manuelle :
+
+```powershell
+.\scripts\deploy-vercel-render.ps1
 ```
 
 | Rôle | Email | Mot de passe |
