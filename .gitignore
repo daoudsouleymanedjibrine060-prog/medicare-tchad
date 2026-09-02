@@ -4,6 +4,7 @@ backend/node_modules/
 frontend/node_modules/
 dist/
 .env
+.env.deploy
 *.log
 .DS_Store
 nginx/ssl/*.pem

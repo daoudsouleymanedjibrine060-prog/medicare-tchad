@@ -12,6 +12,12 @@ function parseDatabaseUrl(url: string) {
   };
 }
 
+function requiresSsl(url: string): boolean {
+  const parsed = new URL(url);
+  const mode = parsed.searchParams.get('ssl-mode') ?? parsed.searchParams.get('sslmode');
+  return mode?.toUpperCase() === 'REQUIRED' || parsed.searchParams.has('sslaccept');
+}
+
 export function createPrismaClient() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set');
@@ -23,6 +29,7 @@ export function createPrismaClient() {
     password: config.password,
     database: config.database,
     connectionLimit: 10,
+    ...(requiresSsl(url) ? { ssl: { rejectUnauthorized: true } } : {}),
   });
   return new PrismaClient({ adapter });
 }
