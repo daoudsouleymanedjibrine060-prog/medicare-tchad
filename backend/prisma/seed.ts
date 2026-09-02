@@ -14,6 +14,9 @@ async function main() {
   console.log('Seeding MediCare Tchad database...');
 
   await prisma.refreshToken.deleteMany();
+  await prisma.prescriptionItem.deleteMany();
+  await prisma.prescription.deleteMany();
+  await prisma.medicalRecord.deleteMany();
   await prisma.blockedSlot.deleteMany();
   await prisma.message.deleteMany();
   await prisma.chatMessage.deleteMany();
@@ -336,11 +339,49 @@ async function main() {
     });
   }
 
+  if (demoPatient && doctors[0]) {
+    const completedAppt = await prisma.appointment.findFirst({
+      where: { patientId: demoPatient.id, doctorId: doctors[0].id, status: AppointmentStatus.COMPLETED },
+    });
+    const record = await prisma.medicalRecord.create({
+      data: {
+        patientId: demoPatient.id,
+        doctorId: doctors[0].id,
+        appointmentId: completedAppt?.id,
+        title: 'Consultation de suivi',
+        diagnosis: 'Hypertension légère',
+        symptoms: 'Maux de tête occasionnels',
+        notes: 'Repos et suivi dans 3 mois',
+        bloodPressure: '130/85',
+        heartRate: 78,
+        temperature: 36.8,
+        weight: 72,
+      },
+    });
+    await prisma.prescription.create({
+      data: {
+        patientId: demoPatient.id,
+        doctorId: doctors[0].id,
+        medicalRecordId: record.id,
+        appointmentId: completedAppt?.id,
+        instructions: 'Prendre les médicaments après les repas',
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        items: {
+          create: [
+            { medication: 'Amlodipine', dosage: '5 mg', frequency: '1 fois par jour', duration: '30 jours' },
+            { medication: 'Paracétamol', dosage: '500 mg', frequency: 'Si besoin', duration: '7 jours' },
+          ],
+        },
+      },
+    });
+  }
+
   console.log('Seed completed!');
   console.log('Comptes de test:');
   console.log('  Super Admin: superadmin@medicare-td.test / Admin@123');
   console.log('  Admin: admin@medicare-td.test / Admin@123');
   console.log('  Assistant: assistant1@medicare-td.test / Admin@123');
+  console.log('  Médecin: dr.hassan@medicare-td.test / Admin@123');
   console.log('  Patient: patient@medicare-td.test / Patient@123');
 }
 

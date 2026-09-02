@@ -17,6 +17,8 @@ export interface User {
 export interface Patient {
   id: string;
   dateOfBirth?: string;
+  age?: number;
+  gender?: string;
   bloodGroup?: string;
   address?: string;
   cityId?: string;
@@ -118,4 +120,45 @@ export interface DashboardStats {
   entityOverview?: { name: string; count: number }[];
   appointmentsByCity: { city: string; count: number }[];
   appointmentsBySpecialty: { specialty: string; count: number }[];
+}
+
+export interface MedicalRecord {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  appointmentId?: string;
+  title: string;
+  diagnosis?: string;
+  symptoms?: string;
+  notes?: string;
+  bloodPressure?: string;
+  heartRate?: number;
+  temperature?: number;
+  weight?: number;
+  createdAt: string;
+  updatedAt?: string;
+  patient?: Patient & { user?: User };
+  doctor?: Doctor & { user?: User; specialty?: Specialty };
+}
+
+export interface PrescriptionItem {
+  id: string;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  duration?: string;
+}
+
+export interface Prescription {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  medicalRecordId?: string;
+  appointmentId?: string;
+  instructions?: string;
+  validUntil?: string;
+  createdAt: string;
+  patient?: Patient & { user?: User };
+  doctor?: Doctor & { user?: User; specialty?: Specialty };
+  items?: PrescriptionItem[];
 }

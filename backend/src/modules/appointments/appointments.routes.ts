@@ -170,11 +170,17 @@ router.get('/mine', authenticate, async (req, res) => {
   return res.json(stripUserSecrets({ data, total, page, limit }));
 });
 
-router.get('/assistant/stats', authenticate, requireRole(Role.ASSISTANT), async (req, res) => {
-  const assistant = await prisma.assistant.findUnique({ where: { userId: req.user!.userId } });
-  if (!assistant) return res.status(404).json({ error: 'Assistant introuvable' });
-
-  const doctorId = assistant.doctorId;
+router.get('/assistant/stats', authenticate, requireRole(Role.ASSISTANT, Role.DOCTOR), async (req, res) => {
+  let doctorId: string | undefined;
+  if (req.user!.role === Role.ASSISTANT) {
+    const assistant = await prisma.assistant.findUnique({ where: { userId: req.user!.userId } });
+    if (!assistant) return res.status(404).json({ error: 'Assistant introuvable' });
+    doctorId = assistant.doctorId;
+  } else {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor) return res.status(404).json({ error: 'Médecin introuvable' });
+    doctorId = doctor.id;
+  }
   const [pending, confirmed, totalPatients] = await Promise.all([
     prisma.appointment.count({ where: { doctorId, status: AppointmentStatus.PENDING } }),
     prisma.appointment.count({ where: { doctorId, status: AppointmentStatus.CONFIRMED } }),
@@ -349,6 +355,11 @@ router.patch('/:id/status', authenticate, validateBody(statusSchema), async (req
     if (!assistant || assistant.doctorId !== appointment.doctorId) {
       return res.status(403).json({ error: 'Accès refusé' });
     }
+  } else if (role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor || doctor.id !== appointment.doctorId) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
   } else if (role === Role.PATIENT) {
     if (status !== 'CANCELLED') return res.status(403).json({ error: 'Accès refusé' });
     const patient = await prisma.patient.findUnique({ where: { userId } });
@@ -366,6 +377,9 @@ router.patch('/:id/status', authenticate, validateBody(statusSchema), async (req
       rejectionReason,
       ...(role === Role.ASSISTANT && status === AppointmentStatus.CONFIRMED
         ? { assistantId: (await prisma.assistant.findUnique({ where: { userId } }))?.id }
+        : {}),
+      ...(role === Role.DOCTOR && status === AppointmentStatus.CONFIRMED
+        ? { assistantId: appointment.doctor.assistants[0]?.id ?? null }
         : {}),
     },
     include: {

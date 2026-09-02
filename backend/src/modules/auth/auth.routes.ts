@@ -32,7 +32,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-  expectedRole: z.enum(['PATIENT', 'ASSISTANT', 'ADMIN', 'SUPER_ADMIN']).optional(),
+  expectedRole: z.enum(['PATIENT', 'DOCTOR', 'ASSISTANT', 'ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
 router.post('/register', validateBody(registerSchema), async (req, res) => {

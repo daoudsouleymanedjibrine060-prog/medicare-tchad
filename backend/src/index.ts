@@ -20,6 +20,8 @@ import chatbotRoutes from './modules/chatbot/chatbot.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import messagesRoutes from './modules/messages/messages.routes';
 import usersRoutes from './modules/users/users.routes';
+import medicalRecordsRoutes from './modules/medical-records/medical-records.routes';
+import prescriptionsRoutes from './modules/prescriptions/prescriptions.routes';
 
 const app = express();
 
@@ -60,6 +62,8 @@ app.use('/api/v1/chatbot', chatbotRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/messages', messagesRoutes);
 app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/medical-records', medicalRecordsRoutes);
+app.use('/api/v1/prescriptions', prescriptionsRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route introuvable' });

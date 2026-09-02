@@ -24,13 +24,17 @@ const scheduleSchema = z.object({
   }
 });
 
-router.get('/', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
+router.get('/', authenticate, requireRole(Role.ASSISTANT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
   let doctorId = req.query.doctorId as string | undefined;
 
   if (req.user!.role === Role.ASSISTANT) {
     const assistant = await prisma.assistant.findUnique({ where: { userId: req.user!.userId } });
     if (!assistant) return res.status(404).json({ error: 'Assistant introuvable' });
     doctorId = assistant.doctorId;
+  } else if (req.user!.role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor) return res.status(404).json({ error: 'Médecin introuvable' });
+    doctorId = doctor.id;
   }
 
   if (!doctorId) return res.status(400).json({ error: 'doctorId requis' });
@@ -42,13 +46,17 @@ router.get('/', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER
   return res.json(schedules);
 });
 
-router.post('/', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), validateBody(scheduleSchema), async (req, res) => {
+router.post('/', authenticate, requireRole(Role.ASSISTANT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN), validateBody(scheduleSchema), async (req, res) => {
   let doctorId = req.body.doctorId as string | undefined;
 
   if (req.user!.role === Role.ASSISTANT) {
     const assistant = await prisma.assistant.findUnique({ where: { userId: req.user!.userId } });
     if (!assistant) return res.status(404).json({ error: 'Assistant introuvable' });
     doctorId = assistant.doctorId;
+  } else if (req.user!.role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor) return res.status(404).json({ error: 'Médecin introuvable' });
+    doctorId = doctor.id;
   }
 
   if (!doctorId) return res.status(400).json({ error: 'doctorId requis' });
@@ -65,7 +73,7 @@ router.post('/', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPE
   return res.status(201).json(schedule);
 });
 
-router.delete('/:id', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
+router.delete('/:id', authenticate, requireRole(Role.ASSISTANT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
   const schedule = await prisma.schedule.findUnique({ where: { id: paramId(req) } });
   if (!schedule) return res.status(404).json({ error: 'Horaire introuvable' });
 
@@ -74,19 +82,29 @@ router.delete('/:id', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role
     if (!assistant || assistant.doctorId !== schedule.doctorId) {
       return res.status(403).json({ error: 'Accès refusé' });
     }
+  } else if (req.user!.role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor || doctor.id !== schedule.doctorId) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
   }
 
   await prisma.schedule.delete({ where: { id: paramId(req) } });
   return res.json({ message: 'Horaire supprimé' });
 });
 
-router.patch('/:id', authenticate, requireRole(Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), validateBody(scheduleSchema), async (req, res) => {
+router.patch('/:id', authenticate, requireRole(Role.ASSISTANT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN), validateBody(scheduleSchema), async (req, res) => {
   const schedule = await prisma.schedule.findUnique({ where: { id: paramId(req) } });
   if (!schedule) return res.status(404).json({ error: 'Horaire introuvable' });
 
   if (req.user!.role === Role.ASSISTANT) {
     const assistant = await prisma.assistant.findUnique({ where: { userId: req.user!.userId } });
     if (!assistant || assistant.doctorId !== schedule.doctorId) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
+  } else if (req.user!.role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor || doctor.id !== schedule.doctorId) {
       return res.status(403).json({ error: 'Accès refusé' });
     }
   }

@@ -11,7 +11,7 @@ $ErrorActionPreference = "Continue"
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 
-Write-Host "=== MediCare Tchad - readiness Oracle Cloud (v1.0.0) ===" -ForegroundColor Cyan
+Write-Host "=== MediCare Tchad - readiness Oracle Cloud (v1.1.0) ===" -ForegroundColor Cyan
 Write-Host ""
 
 $pending = 0

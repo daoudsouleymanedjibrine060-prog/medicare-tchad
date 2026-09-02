@@ -8,13 +8,14 @@ import DashboardLayout from './layouts/DashboardLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import {
   LayoutDashboard, Search, Calendar, User, Map, ClipboardList, Settings, Shield, FlaskConical,
-  Stethoscope, Building2, Users, MessageSquare, Clock,
+  Stethoscope, Building2, Users, MessageSquare, Clock, FileText, Pill,
 } from 'lucide-react';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const AssistantLoginPage = lazy(() => import('./pages/auth/AssistantLoginPage'));
+const DoctorLoginPage = lazy(() => import('./pages/auth/DoctorLoginPage'));
 const AdminLoginPage = lazy(() => import('./pages/auth/AdminLoginPage'));
 const SuperAdminLoginPage = lazy(() => import('./pages/auth/SuperAdminLoginPage'));
 const DoctorsSearchPage = lazy(() => import('./pages/patient/DoctorsSearchPage'));
@@ -30,6 +31,12 @@ const MyDoctorPage = lazy(() => import('./pages/assistant/MyDoctorPage'));
 const PlanningPage = lazy(() => import('./pages/assistant/PlanningPage'));
 const RequestsPage = lazy(() => import('./pages/assistant/RequestsPage'));
 const SchedulesPage = lazy(() => import('./pages/assistant/SchedulesPage'));
+const DoctorDashboard = lazy(() => import('./pages/doctor/DoctorDashboard'));
+const DoctorRequestsPage = lazy(() => import('./pages/doctor/DoctorRequestsPage'));
+const DoctorMedicalRecordsPage = lazy(() => import('./pages/doctor/DoctorMedicalRecordsPage'));
+const DoctorPrescriptionsPage = lazy(() => import('./pages/doctor/DoctorPrescriptionsPage'));
+const MedicalRecordsPage = lazy(() => import('./pages/patient/MedicalRecordsPage'));
+const PrescriptionsPage = lazy(() => import('./pages/patient/PrescriptionsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminManagementPage = lazy(() => import('./pages/admin/AdminManagementPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
@@ -42,6 +49,8 @@ const queryClient = new QueryClient({
 const patientNav = [
   { to: '/patient/dashboard', label: 'Accueil', icon: LayoutDashboard },
   { to: '/patient/rendez-vous', label: 'Rendez-vous', icon: Calendar },
+  { to: '/patient/dossier-medical', label: 'Dossier médical', icon: FileText },
+  { to: '/patient/ordonnances', label: 'Ordonnances', icon: Pill },
   { to: '/patient/medecins', label: 'Médecins', icon: Search },
   { to: '/patient/laboratoires', label: 'Laboratoires', icon: FlaskConical },
   { to: '/patient/carte', label: 'Carte', icon: Map },
@@ -56,6 +65,15 @@ const assistantNav = [
   { to: '/assistant/demandes', label: 'Demandes', icon: ClipboardList },
   { to: '/assistant/horaires', label: 'Horaires', icon: Clock },
   { to: '/assistant/messages', label: 'Messages', icon: MessageSquare },
+];
+
+const doctorNav = [
+  { to: '/doctor/dashboard', label: 'Accueil', icon: LayoutDashboard },
+  { to: '/doctor/demandes', label: 'Demandes', icon: ClipboardList },
+  { to: '/doctor/dossiers', label: 'Dossiers', icon: FileText },
+  { to: '/doctor/ordonnances', label: 'Ordonnances', icon: Pill },
+  { to: '/doctor/horaires', label: 'Horaires', icon: Clock },
+  { to: '/doctor/messages', label: 'Messages', icon: MessageSquare },
 ];
 
 const adminNav = [
@@ -108,6 +126,7 @@ export default function App() {
               <Route element={<GuestRoute />}>
                 <Route path="connexion" element={<Lazy><LoginPage /></Lazy>} />
                 <Route path="connexion/assistant" element={<Lazy><AssistantLoginPage /></Lazy>} />
+                <Route path="connexion/medecin" element={<Lazy><DoctorLoginPage /></Lazy>} />
                 <Route path="connexion/admin" element={<Lazy><AdminLoginPage /></Lazy>} />
                 <Route path="connexion/super-admin" element={<Lazy><SuperAdminLoginPage /></Lazy>} />
                 <Route path="inscription" element={<Lazy><RegisterPage /></Lazy>} />
@@ -120,6 +139,8 @@ export default function App() {
                 <Route path="patient/medecins" element={<Lazy><DoctorsSearchPage /></Lazy>} />
                 <Route path="patient/medecins/:id" element={<Lazy><DoctorDetailPage /></Lazy>} />
                 <Route path="patient/rendez-vous" element={<Lazy><AppointmentsPage /></Lazy>} />
+                <Route path="patient/dossier-medical" element={<Lazy><MedicalRecordsPage /></Lazy>} />
+                <Route path="patient/ordonnances" element={<Lazy><PrescriptionsPage /></Lazy>} />
                 <Route path="patient/laboratoires" element={<Lazy><LaboratoriesPage /></Lazy>} />
                 <Route path="patient/carte" element={<Lazy><MapPage /></Lazy>} />
                 <Route path="patient/messages" element={<Lazy><MessagesPage /></Lazy>} />
@@ -136,6 +157,17 @@ export default function App() {
                 <Route path="assistant/demandes" element={<Lazy><RequestsPage /></Lazy>} />
                 <Route path="assistant/horaires" element={<Lazy><SchedulesPage /></Lazy>} />
                 <Route path="assistant/messages" element={<Lazy><MessagesPage /></Lazy>} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute roles={['DOCTOR']} />}>
+              <Route element={<DashboardLayout title="Espace Médecin" navItems={doctorNav} />}>
+                <Route path="doctor/dashboard" element={<Lazy><DoctorDashboard /></Lazy>} />
+                <Route path="doctor/demandes" element={<Lazy><DoctorRequestsPage /></Lazy>} />
+                <Route path="doctor/dossiers" element={<Lazy><DoctorMedicalRecordsPage /></Lazy>} />
+                <Route path="doctor/ordonnances" element={<Lazy><DoctorPrescriptionsPage /></Lazy>} />
+                <Route path="doctor/horaires" element={<Lazy><SchedulesPage /></Lazy>} />
+                <Route path="doctor/messages" element={<Lazy><MessagesPage /></Lazy>} />
               </Route>
             </Route>
 

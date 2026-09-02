@@ -1,8 +1,8 @@
-# Manuel utilisateur — MediCare Tchad v1.0.0
+# Manuel utilisateur — MediCare Tchad v1.1.0
 
 Guide pratique pour utiliser la plateforme de **rendez-vous médicaux** (Tchad, +235).
 
-**Hors périmètre v1** : dossiers médicaux complets, ordonnances, portail médecin autonome (les assistants gèrent le planning des médecins).
+**v1.1** : dossiers médicaux, ordonnances, portail médecin autonome. Les assistants conservent aussi la gestion du planning.
 
 ## Accès
 
@@ -16,6 +16,7 @@ Guide pratique pour utiliser la plateforme de **rendez-vous médicaux** (Tchad, 
 | Rôle | Email | Mot de passe | Portail |
 |------|-------|--------------|---------|
 | Patient | `patient@medicare-td.test` | `Patient@123` | `/connexion` |
+| Médecin | `dr.hassan@medicare-td.test` | `Admin@123` | `/connexion/medecin` |
 | Assistant | `assistant1@medicare-td.test` | `Admin@123` | `/connexion/assistant` |
 | Admin | `admin@medicare-td.test` | `Admin@123` | `/connexion/admin` |
 | Super Admin | `superadmin@medicare-td.test` | `Admin@123` | `/connexion/super-admin` |
@@ -27,10 +28,22 @@ Guide pratique pour utiliser la plateforme de **rendez-vous médicaux** (Tchad, 
 3. **Tableau de bord** : statistiques RDV, notifications (marquer lu / tout lu), prochains RDV.
 4. **Médecins** : rechercher, ouvrir une fiche, choisir date et créneau, réserver.
 5. **Rendez-vous** : consulter, annuler (PENDING / CONFIRMED).
-6. **Laboratoires / Carte** : établissements et carte hybride.
-7. **Messages** : échanger avec l’assistant du médecin.
-8. **Paramètres** : modifier profil (téléphone +235XXXXXXXX, âge, ville, etc.).
-9. **Chatbot** : questions fréquentes sur la prise de RDV.
+6. **Dossier médical** : consulter l’historique de vos consultations.
+7. **Ordonnances** : consulter vos prescriptions.
+8. **Laboratoires / Carte** : établissements et carte hybride.
+9. **Messages** : échanger avec l’assistant du médecin.
+10. **Paramètres** : modifier profil (téléphone +235XXXXXXXX, âge, ville, etc.).
+11. **Chatbot** : questions fréquentes sur la prise de RDV.
+
+## Médecin
+
+1. Connexion via `/connexion/medecin`.
+2. **Accueil** : statistiques RDV, demandes récentes.
+3. **Demandes** : confirmer ou refuser les RDV de vos patients.
+4. **Dossiers** : créer et consulter les dossiers médicaux.
+5. **Ordonnances** : rédiger des prescriptions (lignes médicaments).
+6. **Horaires** : gérer vos créneaux récurrents.
+7. **Messages** : échanger avec les patients.
 
 ## Assistant
 

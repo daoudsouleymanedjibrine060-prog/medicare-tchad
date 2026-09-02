@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] — 2026-08-13
+
+### Ajouté
+- Portail médecin autonome (`/connexion/medecin`, routes `/doctor/*`)
+- Dossiers médicaux (API + UI médecin/patient)
+- Ordonnances (API + UI médecin/patient)
+- Endpoints `GET/POST /medical-records`, `GET/POST /prescriptions`
+- Login `expectedRole: DOCTOR` ; stats RDV pour médecins
+- Script `scripts/create-github-release.ps1`
+- Données démo : dossier + ordonnance pour le patient test
+
 ## [1.0.0] — 2026-08-07
 
 ### Ajouté

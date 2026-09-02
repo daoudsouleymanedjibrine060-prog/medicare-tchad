@@ -77,7 +77,9 @@ model Patient {
   cityId       String?       @map("city_id")
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   city         City?         @relation(fields: [cityId], references: [id])
-  appointments Appointment[]
+  appointments    Appointment[]
+  medicalRecords  MedicalRecord[]
+  prescriptions   Prescription[]
 
   @@map("patients")
 }
@@ -96,6 +98,8 @@ model Doctor {
   appointments    Appointment[]
   blockedSlots    BlockedSlot[]
   establishments  DoctorEstablishment[]
+  medicalRecords  MedicalRecord[]
+  prescriptions   Prescription[]
 
   @@index([specialtyId])
   @@map("doctors")
@@ -216,11 +220,70 @@ model Appointment {
   doctor          Doctor            @relation(fields: [doctorId], references: [id])
   assistant       Assistant?        @relation(fields: [assistantId], references: [id])
   establishment   Establishment     @relation(fields: [establishmentId], references: [id])
+  medicalRecords  MedicalRecord[]
+  prescriptions   Prescription[]
 
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
   @@index([patientId])
   @@map("appointments")
+}
+
+model MedicalRecord {
+  id            String         @id @default(uuid())
+  patientId     String         @map("patient_id")
+  doctorId      String         @map("doctor_id")
+  appointmentId String?        @map("appointment_id")
+  title         String
+  diagnosis     String?        @db.Text
+  symptoms      String?        @db.Text
+  notes         String?        @db.Text
+  bloodPressure String?        @map("blood_pressure")
+  heartRate     Int?           @map("heart_rate")
+  temperature   Float?         @map("temperature")
+  weight        Float?         @map("weight")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  doctor        Doctor         @relation(fields: [doctorId], references: [id])
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  prescriptions Prescription[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("medical_records")
+}
+
+model Prescription {
+  id              String             @id @default(uuid())
+  patientId       String             @map("patient_id")
+  doctorId        String             @map("doctor_id")
+  medicalRecordId String?            @map("medical_record_id")
+  appointmentId   String?            @map("appointment_id")
+  instructions    String?            @db.Text
+  validUntil      DateTime?          @map("valid_until") @db.Date
+  createdAt       DateTime           @default(now()) @map("created_at")
+  patient         Patient            @relation(fields: [patientId], references: [id])
+  doctor          Doctor             @relation(fields: [doctorId], references: [id])
+  medicalRecord   MedicalRecord?     @relation(fields: [medicalRecordId], references: [id], onDelete: SetNull)
+  appointment     Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  items           PrescriptionItem[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid())
+  prescriptionId String       @map("prescription_id")
+  medication     String
+  dosage         String
+  frequency      String
+  duration       String?
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescription_items")
 }
 
 model Notification {

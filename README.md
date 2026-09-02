@@ -2,7 +2,7 @@
 
 Plateforme web de **gestion des rendez-vous médicaux** pour le Tchad (indicatif +235).
 
-**Version :** v1.0.0
+**Version :** v1.1.0
 
 ### Périmètre v1.0.0
 
@@ -11,7 +11,7 @@ Plateforme web de **gestion des rendez-vous médicaux** pour le Tchad (indicatif
 - Laboratoires, carte hybride, messages, notifications, chatbot
 - Tableau de bord et administration
 
-**Hors v1.0.0** (prévu éventuellement en v1.1+) : dossiers médicaux complets, ordonnances, portail médecin autonome (les assistants gèrent les médecins).
+**v1.1.0** : dossiers médicaux, ordonnances, portail médecin autonome (`/connexion/medecin`). Les assistants conservent aussi la gestion des médecins.
 
 ## Stack
 
@@ -21,7 +21,7 @@ Plateforme web de **gestion des rendez-vous médicaux** pour le Tchad (indicatif
 - **Cartographie:** Google Maps (hybride) ou OpenStreetMap + Leaflet
 - **SMS:** Africa's Talking (+235)
 - **Chatbot:** OpenAI API (fallback local)
-- **Hébergement prod (gratuit):** Oracle Cloud Always Free + Docker + Nginx + Let's Encrypt
+- **Hébergement prod (gratuit):** [Vercel](https://vercel.com) (frontend) + [Render](https://render.com) (API) + MySQL externe — voir [`docs/VERCEL_RENDER.md`](docs/VERCEL_RENDER.md). Alternative : Oracle Cloud — [`docs/ORACLE_CLOUD.md`](docs/ORACLE_CLOUD.md)
 
 ## Démarrage rapide (Windows — une commande)
 
@@ -119,6 +119,7 @@ chmod +x scripts/*.sh
 
 Voir :
 
+- [docs/VERCEL_RENDER.md](docs/VERCEL_RENDER.md) — déploiement Vercel + Render + MySQL (gratuit)
 - [docs/ORACLE_CLOUD.md](docs/ORACLE_CLOUD.md) — guide Oracle Always Free
 - [docs/VPS_ONBOARDING.md](docs/VPS_ONBOARDING.md) — VM + DNS + GitHub
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Docker prod, SSL, backups
@@ -129,6 +130,7 @@ Voir :
 - [API REST](docs/API.md)
 - [Manuel utilisateur](docs/MANUEL_UTILISATEUR.md)
 - [Changelog](CHANGELOG.md)
+- [Vercel + Render](docs/VERCEL_RENDER.md)
 - [Oracle Cloud (gratuit)](docs/ORACLE_CLOUD.md)
 - [Déploiement](docs/DEPLOYMENT.md)
 - [Mémoire Tchad](docs/MEMOIRE_TCHAD.md)

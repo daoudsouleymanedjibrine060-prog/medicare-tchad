@@ -19,6 +19,7 @@ export function GuestRoute() {
   if (user) {
     const paths: Record<string, string> = {
       PATIENT: '/patient/dashboard',
+      DOCTOR: '/doctor/dashboard',
       ASSISTANT: '/assistant/dashboard',
       ADMIN: '/admin/dashboard',
       SUPER_ADMIN: '/super-admin/dashboard',

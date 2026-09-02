@@ -9,7 +9,7 @@ Authentification : header `Authorization: Bearer <accessToken>` (sauf routes pub
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | POST | `/auth/register` | Inscription patient |
-| POST | `/auth/login` | Connexion (option `expectedRole`) |
+| POST | `/auth/login` | Connexion (option `expectedRole`: PATIENT, DOCTOR, ASSISTANT, ADMIN, SUPER_ADMIN) |
 | POST | `/auth/refresh` | Renouveler access token |
 | POST | `/auth/logout` | Déconnexion |
 | GET | `/auth/me` | Profil courant |
@@ -40,8 +40,8 @@ Authentification : header `Authorization: Bearer <accessToken>` (sauf routes pub
 | POST | `/appointments` | Réserver (Patient) |
 | GET | `/appointments/mine` | Mes RDV |
 | GET | `/appointments` | Tous (Admin) |
-| PATCH | `/appointments/:id/status` | Changer statut |
-| GET | `/appointments/assistant/stats` | Stats assistant |
+| PATCH | `/appointments/:id/status` | Changer statut (Assistant, Médecin, Patient annulation, Admin) |
+| GET | `/appointments/assistant/stats` | Stats assistant ou médecin |
 | GET | `/appointments/assistant/tomorrow-slots` | Créneaux demain |
 | PUT | `/appointments/assistant/tomorrow-slots` | Enregistrer créneaux demain |
 
@@ -59,10 +59,27 @@ Authentification : header `Authorization: Bearer <accessToken>` (sauf routes pub
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/schedules` | Horaires médecin |
-| POST | `/schedules` | Ajouter |
-| PATCH | `/schedules/:id` | Modifier |
-| DELETE | `/schedules/:id` | Supprimer |
+| GET | `/schedules` | Horaires médecin (Assistant, Médecin, Admin) |
+| POST | `/schedules` | Ajouter (Assistant, Médecin, Admin) |
+| PATCH | `/schedules/:id` | Modifier (Assistant, Médecin, Admin) |
+| DELETE | `/schedules/:id` | Supprimer (Assistant, Médecin, Admin) |
+
+## Dossiers médicaux
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/medical-records` | Liste (Patient: les siens ; Médecin: les siens ; Admin: filtres) |
+| GET | `/medical-records/:id` | Détail |
+| POST | `/medical-records` | Créer (Médecin) |
+| PATCH | `/medical-records/:id` | Modifier (Médecin) |
+
+## Ordonnances
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/prescriptions` | Liste (Patient / Médecin / Admin) |
+| GET | `/prescriptions/:id` | Détail |
+| POST | `/prescriptions` | Créer avec lignes médicaments (Médecin) |
 
 ## Notifications
 

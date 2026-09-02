@@ -41,7 +41,7 @@ async function patientHasRelationWithUser(patientUserId: string, otherUserId: st
   return false;
 }
 
-router.get('/', authenticate, requireRole(Role.PATIENT, Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
+router.get('/', authenticate, requireRole(Role.PATIENT, Role.DOCTOR, Role.ASSISTANT, Role.ADMIN, Role.SUPER_ADMIN), async (req, res) => {
   const userId = req.user!.userId;
   const messages = await prisma.message.findMany({
     where: { OR: [{ senderId: userId }, { receiverId: userId }] },
@@ -86,6 +86,44 @@ router.get('/contacts', authenticate, async (req, res) => {
     });
     return res.json([...assistants, ...admins]);
   }
+  if (role === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor) return res.json([]);
+
+    const patientIds = await prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
+      select: { patientId: true },
+      distinct: ['patientId'],
+    });
+    const ids = patientIds.map((p) => p.patientId);
+
+    const patients = ids.length
+      ? await prisma.user.findMany({
+          where: {
+            role: Role.PATIENT,
+            isActive: true,
+            patient: { id: { in: ids } },
+          },
+          select: contactSelect,
+        })
+      : [];
+
+    const assistants = await prisma.user.findMany({
+      where: {
+        role: Role.ASSISTANT,
+        isActive: true,
+        assistant: { doctorId: doctor.id },
+      },
+      select: contactSelect,
+    });
+
+    const admins = await prisma.user.findMany({
+      where: { role: { in: [Role.ADMIN, Role.SUPER_ADMIN] }, isActive: true },
+      select: contactSelect,
+      take: 5,
+    });
+    return res.json([...patients, ...assistants, ...admins]);
+  }
   if (role === Role.ASSISTANT) {
     const doctorId = await getAssistantDoctorId(req.user!.userId);
     if (!doctorId) return res.json([]);
@@ -119,6 +157,28 @@ router.post('/', authenticate, validateBody(sendSchema), async (req, res) => {
     const allowed = await patientHasRelationWithUser(req.user!.userId, receiverId);
     if (!allowed) {
       return res.status(403).json({ error: 'Vous ne pouvez pas contacter cet utilisateur' });
+    }
+  }
+
+  if (senderRole === Role.DOCTOR) {
+    const doctor = await prisma.doctor.findUnique({ where: { userId: req.user!.userId } });
+    if (!doctor) return res.status(403).json({ error: 'Médecin non trouvé' });
+    const receiver = await prisma.user.findUnique({ where: { id: receiverId } });
+    if (!receiver) return res.status(403).json({ error: 'Destinataire invalide' });
+    if (receiver.role === Role.PATIENT) {
+      const patient = await prisma.patient.findUnique({ where: { userId: receiverId } });
+      if (!patient) return res.status(403).json({ error: 'Patient invalide' });
+      const apt = await prisma.appointment.findFirst({
+        where: { doctorId: doctor.id, patientId: patient.id },
+      });
+      if (!apt) return res.status(403).json({ error: 'Patient non lié à votre compte' });
+    } else if (receiver.role === Role.ASSISTANT) {
+      const assistant = await prisma.assistant.findUnique({ where: { userId: receiverId } });
+      if (!assistant || assistant.doctorId !== doctor.id) {
+        return res.status(403).json({ error: 'Assistant non lié à votre compte' });
+      }
+    } else if (receiver.role !== Role.ADMIN && receiver.role !== Role.SUPER_ADMIN) {
+      return res.status(403).json({ error: 'Destinataire invalide' });
     }
   }
 

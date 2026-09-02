@@ -260,6 +260,36 @@ async function run() {
   }, adminToken);
   ok('Changement mot de passe admin', changePwd.status === 200);
 
+  const doctorLogin = await request('POST', '/auth/login', {
+    email: 'dr.hassan@medicare-td.test',
+    password: 'Admin@123',
+    expectedRole: 'DOCTOR',
+  });
+  ok('Login médecin (portail médecin)', doctorLogin.status === 200 && doctorLogin.data.accessToken);
+  const doctorToken = doctorLogin.data.accessToken;
+
+  const doctorWrongPortal = await request('POST', '/auth/login', {
+    email: 'dr.hassan@medicare-td.test',
+    password: 'Admin@123',
+    expectedRole: 'PATIENT',
+  });
+  ok('Refus médecin sur portail patient', doctorWrongPortal.status === 403);
+
+  const doctorRecords = await request('GET', '/medical-records?limit=5', null, doctorToken);
+  ok('Liste dossiers médicaux (médecin)', doctorRecords.status === 200 && Array.isArray(doctorRecords.data.data));
+
+  const patientRecords = await request('GET', '/medical-records?limit=5', null, patientToken);
+  ok('Liste dossiers médicaux (patient)', patientRecords.status === 200 && Array.isArray(patientRecords.data.data));
+
+  const doctorRx = await request('GET', '/prescriptions?limit=5', null, doctorToken);
+  ok('Liste ordonnances (médecin)', doctorRx.status === 200 && Array.isArray(doctorRx.data.data));
+
+  const patientRx = await request('GET', '/prescriptions?limit=5', null, patientToken);
+  ok('Liste ordonnances (patient)', patientRx.status === 200 && Array.isArray(patientRx.data.data));
+
+  const doctorStats = await request('GET', '/appointments/assistant/stats', null, doctorToken);
+  ok('Stats médecin', doctorStats.status === 200 && typeof doctorStats.data.pending === 'number');
+
   console.log('\n=== Résultats vérification API ===\n');
   let passed = 0;
   for (const r of results) {

@@ -99,6 +99,7 @@ export function getRoleHomePath(role: Role): string {
   switch (role) {
     case 'PATIENT': return '/patient/dashboard';
     case 'ASSISTANT': return '/assistant/dashboard';
+    case 'DOCTOR': return '/doctor/dashboard';
     case 'ADMIN': return '/admin/dashboard';
     case 'SUPER_ADMIN': return '/super-admin/dashboard';
     default: return '/';

@@ -80,7 +80,7 @@ export default function MessagesPage() {
     <div>
       <h1 className="text-2xl font-bold">Messages</h1>
       <p className="text-slate-500 mt-1">
-        {user?.role === 'ASSISTANT' ? 'Répondre aux patients' : 'Communiquez avec les assistants et l\'administration'}
+        {user?.role === 'ASSISTANT' ? 'Répondre aux patients' : user?.role === 'DOCTOR' ? 'Communiquez avec vos patients, assistants et l\'administration' : 'Communiquez avec les assistants et l\'administration'}
       </p>
       <div className="mt-6 grid lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border p-4">
