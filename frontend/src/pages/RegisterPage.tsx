@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getAuthErrorMessage } from '../utils/authErrors';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -32,8 +33,7 @@ export default function RegisterPage() {
       });
       navigate('/patient/dashboard');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Erreur lors de l\'inscription');
+      setError(getAuthErrorMessage(err, 'register'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,9 @@ export default function RegisterPage() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-center">Inscription Patient</h1>
-        <p className="text-sm text-slate-500 text-center mt-2">Créez votre compte MediCare Tchad</p>
+        <p className="text-sm text-slate-500 text-center mt-2">
+          Créez votre compte personnel MediCare Tchad (email + mot de passe)
+        </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {error && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg">{error}</div>}
@@ -61,7 +63,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+            <input type="email" required autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
@@ -87,17 +89,17 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Mot de passe</label>
-            <input type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
+            <input type="password" required minLength={8} autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Confirmer le mot de passe</label>
-            <input type="password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+            <input type="password" required autoComplete="new-password" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
           </div>
           <button type="submit" disabled={loading}
             className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50">
-            {loading ? 'Inscription...' : 'S\'inscrire'}
+            {loading ? 'Inscription...' : 'Créer mon compte'}
           </button>
         </form>
 
