@@ -18,6 +18,16 @@ function requiresSsl(url: string): boolean {
   return mode?.toUpperCase() === 'REQUIRED' || parsed.searchParams.has('sslaccept');
 }
 
+function buildSslOption(url: string): { ssl?: { rejectUnauthorized: boolean; ca?: string } } {
+  if (!requiresSsl(url)) return {};
+  const ca = process.env.DATABASE_SSL_CA?.replace(/\\n/g, '\n').trim();
+  if (ca) {
+    return { ssl: { rejectUnauthorized: true, ca } };
+  }
+  // Aiven / managed MySQL: TLS chiffre ; sans CA locale, ne pas bloquer sur la chaine
+  return { ssl: { rejectUnauthorized: false } };
+}
+
 export function createPrismaClient() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set');
@@ -28,8 +38,9 @@ export function createPrismaClient() {
     user: config.user,
     password: config.password,
     database: config.database,
-    connectionLimit: 10,
-    ...(requiresSsl(url) ? { ssl: { rejectUnauthorized: true } } : {}),
+    connectionLimit: 5,
+    connectTimeout: 30_000,
+    ...buildSslOption(url),
   });
   return new PrismaClient({ adapter });
 }
